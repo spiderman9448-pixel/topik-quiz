@@ -200,13 +200,14 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
   <div class="input-area">
     <div class="input-row" id="voice-row">
       <button id="mic-btn" onclick="toggleListening()">🎤 タップして話す</button>
+      <button class="btn btn-skip" onclick="skipQuestion()">スキップ</button>
     </div>
     <div class="input-row" id="keyboard-row" style="display:none;">
       <input type="text" id="answer-input" placeholder="韓国語で入力..." autocomplete="off">
       <button class="btn btn-primary" onclick="checkAnswer()">判定</button>
+      <button class="btn btn-skip" onclick="skipQuestion()">スキップ</button>
     </div>
     <div class="input-row" style="justify-content:center; gap:12px;">
-      <button class="btn btn-skip" onclick="skipQuestion()">スキップ</button>
       <button class="btn btn-skip" id="toggle-input-btn" onclick="toggleInputMethod()">キーボード</button>
     </div>
     <div class="voice-status" id="voice-status"></div>
