@@ -74,11 +74,13 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
   50% { box-shadow: 0 0 0 12px rgba(233,69,96,0); }
 }
 .voice-status { text-align: center; color: #888; font-size: 0.8rem; margin-top: 4px; min-height: 20px; }
-.feedback { width: 100%; text-align: center; min-height: 60px; margin: 8px 0; }
-.feedback.correct { color: #4ecca3; }
-.feedback.wrong { color: #e94560; }
-.feedback .answer-display { font-size: 1.3rem; font-weight: bold; margin: 4px 0; }
-.feedback .answer-detail { font-size: 0.85rem; color: #aaa; }
+.feedback { width: 100%; text-align: center; min-height: 80px; margin: 12px 0; padding: 16px; border-radius: 16px; }
+.feedback.correct { color: #4ecca3; background: rgba(78,204,163,0.12); border: 2px solid rgba(78,204,163,0.3); }
+.feedback.wrong { color: #e94560; background: rgba(233,69,96,0.12); border: 2px solid rgba(233,69,96,0.3); }
+.feedback .result-icon { font-size: 2.5rem; margin-bottom: 4px; }
+.feedback .result-label { font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; }
+.feedback .answer-display { font-size: 1.5rem; font-weight: bold; margin: 6px 0; }
+.feedback .answer-detail { font-size: 0.95rem; color: #aaa; margin-top: 6px; }
 .speak-btn { background: none; border: none; color: #4ecca3; font-size: 1.1rem; cursor: pointer; margin-left: 6px; }
 .quit-btn { background: none; border: 1px solid #444; color: #888; padding: 6px 14px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
 
@@ -1825,13 +1827,13 @@ function checkAnswer() {
   if (isCorrect) {
     correctCount++;
     feedback.className = 'feedback correct';
-    feedback.innerHTML = `<div class="answer-display">正解！ ${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div><div class="answer-detail">${detailHtml}</div>`;
+    feedback.innerHTML = `<div class="result-icon">⭕</div><div class="result-label">正解！</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div><div class="answer-detail">${detailHtml}</div>`;
     speakKorean(correctAnswer);
     updateScoreBar();
-    setTimeout(nextQuestion, 1800);
+    setTimeout(nextQuestion, 2000);
   } else {
     feedback.className = 'feedback wrong';
-    feedback.innerHTML = `<div class="answer-display">正解: ${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div><div class="answer-detail">${detailHtml}</div>`;
+    feedback.innerHTML = `<div class="result-icon">❌</div><div class="result-label">不正解</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div><div class="answer-detail">${detailHtml}</div>`;
     speakKorean(correctAnswer);
     mistakes.push({ question: questionText, correctAnswer, yourAnswer: input });
     document.getElementById('next-btn').style.display = 'block';
@@ -1845,7 +1847,7 @@ function skipQuestion() {
   const feedback = document.getElementById('feedback');
   const escaped = correctAnswer.replace(/'/g, "\\'");
   feedback.className = 'feedback wrong';
-  feedback.innerHTML = `<div class="answer-display">答え: ${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div><div class="answer-detail">${detailHtml}</div>`;
+  feedback.innerHTML = `<div class="result-icon">⏭️</div><div class="result-label">スキップ</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div><div class="answer-detail">${detailHtml}</div>`;
   speakKorean(correctAnswer);
   mistakes.push({ question: questionText, correctAnswer, yourAnswer: '' });
   document.getElementById('next-btn').style.display = 'block';
