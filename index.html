@@ -35,6 +35,17 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
 .course-card .time { font-size: 1.2rem; color: #e94560; font-weight: bold; }
 .section-label { font-size: 0.8rem; color: #999; margin-top: 16px; margin-bottom: 4px; letter-spacing: 1px; }
 
+/* === タブ === */
+.tabs { display: flex; gap: 6px; width: 100%; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; -webkit-overflow-scrolling: touch; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex-shrink: 0; padding: 10px 16px; border-radius: 10px; font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; border: 2px solid #e0e0e0; background: #fff; color: #666; transition: all 0.2s;
+}
+.tab.active { background: #e94560; color: #fff; border-color: #e94560; }
+.tab-content { display: none; width: 100%; }
+.tab-content.active { display: block; }
+
 /* === クイズ画面 === */
 .quiz-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .timer { font-size: 1.5rem; font-weight: bold; color: #e94560; }
@@ -111,82 +122,57 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
 <!-- ===== コース選択画面 ===== -->
 <div class="screen active" id="screen-home">
   <h1>TOPIK 1-2級 韓国語クイズ</h1>
-  <div class="section-label">単語コース</div>
-  <div class="course-grid">
-    <div class="course-card" onclick="startCourse('word',3)">
-      <div class="left"><div class="title">単語クイズ</div><div class="desc">日本語 → 韓国語を答える</div></div>
-      <div class="time">3分</div>
-    </div>
-    <div class="course-card" onclick="startCourse('word',5)">
-      <div class="left"><div class="title">単語クイズ</div><div class="desc">日本語 → 韓国語を答える</div></div>
-      <div class="time">5分</div>
-    </div>
-    <div class="course-card" onclick="startCourse('word',10)">
-      <div class="left"><div class="title">単語クイズ</div><div class="desc">日本語 → 韓国語を答える</div></div>
-      <div class="time">10分</div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('tab-word')">単語</div>
+    <div class="tab" onclick="switchTab('tab-sentence')">例文</div>
+    <div class="tab" onclick="switchTab('tab-travel')">旅行</div>
+    <div class="tab" onclick="switchTab('tab-hitokoto')">一言</div>
+    <div class="tab" onclick="switchTab('tab-number')">数字</div>
+  </div>
+  <div class="tab-content active" id="tab-word">
+    <div class="section-label">日本語 → 韓国語を答える</div>
+    <div class="course-grid">
+      <div class="course-card" onclick="startCourse('word',3)"><div class="left"><div class="title">単語クイズ</div><div class="desc">TOPIK初級 約180語</div></div><div class="time">3分</div></div>
+      <div class="course-card" onclick="startCourse('word',5)"><div class="left"><div class="title">単語クイズ</div><div class="desc">TOPIK初級 約180語</div></div><div class="time">5分</div></div>
+      <div class="course-card" onclick="startCourse('word',10)"><div class="left"><div class="title">単語クイズ</div><div class="desc">TOPIK初級 約180語</div></div><div class="time">10分</div></div>
     </div>
   </div>
-  <div class="section-label">例文コース</div>
-  <div class="course-grid">
-    <div class="course-card" onclick="startCourse('sentence',3)">
-      <div class="left"><div class="title">例文クイズ</div><div class="desc">日本語例文 → 韓国語で答える</div></div>
-      <div class="time">3分</div>
-    </div>
-    <div class="course-card" onclick="startCourse('sentence',5)">
-      <div class="left"><div class="title">例文クイズ</div><div class="desc">日本語例文 → 韓国語で答える</div></div>
-      <div class="time">5分</div>
+  <div class="tab-content" id="tab-sentence">
+    <div class="section-label">日本語例文 → 韓国語で答える</div>
+    <div class="course-grid">
+      <div class="course-card" onclick="startCourse('sentence',3)"><div class="left"><div class="title">例文クイズ</div><div class="desc">単語を使った例文で練習</div></div><div class="time">3分</div></div>
+      <div class="course-card" onclick="startCourse('sentence',5)"><div class="left"><div class="title">例文クイズ</div><div class="desc">単語を使った例文で練習</div></div><div class="time">5分</div></div>
+      <div class="course-card" onclick="startCourse('sentence',10)"><div class="left"><div class="title">例文クイズ</div><div class="desc">単語を使った例文で練習</div></div><div class="time">10分</div></div>
     </div>
   </div>
-  <div class="section-label">旅行フレーズコース</div>
-  <div class="course-grid">
-    <div class="course-card" onclick="startCourse('travel',3)">
-      <div class="left"><div class="title">旅行フレーズ</div><div class="desc">日本語 → 韓国語フレーズを答える</div></div>
-      <div class="time">3分</div>
-    </div>
-    <div class="course-card" onclick="startCourse('travel',5)">
-      <div class="left"><div class="title">旅行フレーズ</div><div class="desc">日本語 → 韓国語フレーズを答える</div></div>
-      <div class="time">5分</div>
-    </div>
-    <div class="course-card" onclick="startCourse('travel',10)">
-      <div class="left"><div class="title">旅行フレーズ</div><div class="desc">日本語 → 韓国語フレーズを答える</div></div>
-      <div class="time">10分</div>
+  <div class="tab-content" id="tab-travel">
+    <div class="section-label">旅行で使えるフレーズ1000</div>
+    <div class="course-grid">
+      <div class="course-card" onclick="startCourse('travel',3)"><div class="left"><div class="title">旅行フレーズ</div><div class="desc">空港・ホテル・食事・買い物など</div></div><div class="time">3分</div></div>
+      <div class="course-card" onclick="startCourse('travel',5)"><div class="left"><div class="title">旅行フレーズ</div><div class="desc">空港・ホテル・食事・買い物など</div></div><div class="time">5分</div></div>
+      <div class="course-card" onclick="startCourse('travel',10)"><div class="left"><div class="title">旅行フレーズ</div><div class="desc">空港・ホテル・食事・買い物など</div></div><div class="time">10分</div></div>
     </div>
   </div>
-  <div class="section-label">一言フレーズ（別れ際・締めの一言）</div>
-  <div class="course-grid">
-    <div class="course-card" onclick="startCourse('hitokoto',3)">
-      <div class="left"><div class="title">一言フレーズ</div><div class="desc">場面別の締めの一言を韓国語で</div></div>
-      <div class="time">3分</div>
-    </div>
-    <div class="course-card" onclick="startCourse('hitokoto',5)">
-      <div class="left"><div class="title">一言フレーズ</div><div class="desc">場面別の締めの一言を韓国語で</div></div>
-      <div class="time">5分</div>
-    </div>
-    <div class="course-card" onclick="startCourse('hitokoto',10)">
-      <div class="left"><div class="title">一言フレーズ</div><div class="desc">場面別の締めの一言を韓国語で</div></div>
-      <div class="time">10分</div>
+  <div class="tab-content" id="tab-hitokoto">
+    <div class="section-label">別れ際・締めの一言フレーズ</div>
+    <div class="course-grid">
+      <div class="course-card" onclick="startCourse('hitokoto',3)"><div class="left"><div class="title">一言フレーズ</div><div class="desc">励まし・感謝・褒め・お祝いなど</div></div><div class="time">3分</div></div>
+      <div class="course-card" onclick="startCourse('hitokoto',5)"><div class="left"><div class="title">一言フレーズ</div><div class="desc">励まし・感謝・褒め・お祝いなど</div></div><div class="time">5分</div></div>
+      <div class="course-card" onclick="startCourse('hitokoto',10)"><div class="left"><div class="title">一言フレーズ</div><div class="desc">励まし・感謝・褒め・お祝いなど</div></div><div class="time">10分</div></div>
     </div>
   </div>
-  <div class="section-label">数字コース（漢数詞: 일, 이, 삼...）</div>
-  <div class="course-grid">
-    <div class="course-card" onclick="startCourse('sino',3)">
-      <div class="left"><div class="title">漢数詞クイズ</div><div class="desc">1〜9999 → 일, 이, 삼, 십, 백, 천</div></div>
-      <div class="time">3分</div>
+  <div class="tab-content" id="tab-number">
+    <div class="section-label">漢数詞（일, 이, 삼... 1〜9999）</div>
+    <div class="course-grid">
+      <div class="course-card" onclick="startCourse('sino',3)"><div class="left"><div class="title">漢数詞クイズ</div><div class="desc">일, 이, 삼, 십, 백, 천</div></div><div class="time">3分</div></div>
+      <div class="course-card" onclick="startCourse('sino',5)"><div class="left"><div class="title">漢数詞クイズ</div><div class="desc">일, 이, 삼, 십, 백, 천</div></div><div class="time">5分</div></div>
+      <div class="course-card" onclick="startCourse('sino',10)"><div class="left"><div class="title">漢数詞クイズ</div><div class="desc">일, 이, 삼, 십, 백, 천</div></div><div class="time">10分</div></div>
     </div>
-    <div class="course-card" onclick="startCourse('sino',5)">
-      <div class="left"><div class="title">漢数詞クイズ</div><div class="desc">1〜9999 → 일, 이, 삼, 십, 백, 천</div></div>
-      <div class="time">5分</div>
-    </div>
-  </div>
-  <div class="section-label">数字コース（固有数詞: 하나, 둘, 셋...）</div>
-  <div class="course-grid">
-    <div class="course-card" onclick="startCourse('native',3)">
-      <div class="left"><div class="title">固有数詞クイズ</div><div class="desc">1〜99 → 하나, 둘, 열, 스물...</div></div>
-      <div class="time">3分</div>
-    </div>
-    <div class="course-card" onclick="startCourse('native',5)">
-      <div class="left"><div class="title">固有数詞クイズ</div><div class="desc">1〜99 → 하나, 둘, 열, 스물...</div></div>
-      <div class="time">5分</div>
+    <div class="section-label" style="margin-top:20px;">固有数詞（하나, 둘, 셋... 1〜99）</div>
+    <div class="course-grid">
+      <div class="course-card" onclick="startCourse('native',3)"><div class="left"><div class="title">固有数詞クイズ</div><div class="desc">하나, 둘, 열, 스물...</div></div><div class="time">3分</div></div>
+      <div class="course-card" onclick="startCourse('native',5)"><div class="left"><div class="title">固有数詞クイズ</div><div class="desc">하나, 둘, 열, 스물...</div></div><div class="time">5分</div></div>
+      <div class="course-card" onclick="startCourse('native',10)"><div class="left"><div class="title">固有数詞クイズ</div><div class="desc">하나, 둘, 열, 스물...</div></div><div class="time">10分</div></div>
     </div>
   </div>
 </div>
@@ -1675,6 +1661,12 @@ let useVoice = true;
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+}
+function switchTab(tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
 }
 
 // ===== コース開始 =====
