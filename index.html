@@ -1822,8 +1822,13 @@ function nextQuestion() {
   document.getElementById('feedback').className = 'feedback';
   document.getElementById('next-btn').style.display = 'none';
   document.getElementById('voice-status').textContent = '';
-  if (useVoice) document.getElementById('answer-input').value = '';
-  else document.getElementById('answer-input').focus();
+  if (useVoice) {
+    document.getElementById('answer-input').value = '';
+    // 自動的にマイクを立ち上げる（初回タップ後は自動で動く）
+    setTimeout(() => { if (useVoice && !isListening) startListening(); }, 400);
+  } else {
+    document.getElementById('answer-input').focus();
+  }
   startQuestionTimer();
 }
 
