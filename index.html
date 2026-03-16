@@ -1824,9 +1824,8 @@ function checkAnswer() {
     correctCount++;
     feedback.className = 'feedback correct';
     feedback.innerHTML = `<div class="result-icon">⭕</div><div class="result-label">正解！</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
-    speakKorean(correctAnswer);
+    speakKorean(correctAnswer, () => setTimeout(nextQuestion, 800));
     updateScoreBar();
-    setTimeout(nextQuestion, 2000);
   } else {
     feedback.className = 'feedback wrong';
     feedback.innerHTML = `<div class="result-icon">❌</div><div class="result-label">不正解</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
@@ -1855,13 +1854,20 @@ function updateScoreBar() {
 }
 
 // ===== 音声合成（TTS） =====
-function speakKorean(text) {
-  if (!window.speechSynthesis) return;
+function speakKorean(text, onEnd) {
+  if (!window.speechSynthesis) { if (onEnd) onEnd(); return; }
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'ko-KR'; u.rate = 0.85;
   const v = speechSynthesis.getVoices().find(v => v.lang.startsWith('ko'));
   if (v) u.voice = v;
+  if (onEnd) {
+    let done = false;
+    const finish = () => { if (!done) { done = true; onEnd(); } };
+    u.onend = finish;
+    u.onerror = finish;
+    setTimeout(finish, 5000); // 安全タイマー
+  }
   speechSynthesis.speak(u);
 }
 if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices(); }
