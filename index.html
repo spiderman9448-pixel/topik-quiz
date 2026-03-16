@@ -81,7 +81,7 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
 .feedback .result-label { font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; }
 .feedback .answer-display { font-size: 1.5rem; font-weight: bold; margin: 6px 0; }
 .feedback .answer-detail { font-size: 0.95rem; color: #aaa; margin-top: 6px; }
-.speak-btn { background: none; border: none; color: #4ecca3; font-size: 1.1rem; cursor: pointer; margin-left: 6px; }
+.speak-btn { background: #4ecca3; color: #1a1a2e; border: none; border-radius: 8px; padding: 6px 12px; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-left: 8px; vertical-align: middle; }
 .quit-btn { background: none; border: 1px solid #444; color: #888; padding: 6px 14px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
 
 /* === 結果画面 === */
@@ -1710,7 +1710,7 @@ function endCourse() {
       const escaped = m.correctAnswer.replace(/'/g, "\\'");
       html += `<div class="mistake-item">
         <div>
-          <div class="word">${m.correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div>
+          <div class="word">${m.correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div>
           <div class="meaning">${m.question}</div>
           ${m.yourAnswer ? `<div class="meaning" style="color:#e94560;">あなたの答え: ${m.yourAnswer}</div>` : ''}
         </div>
@@ -1827,13 +1827,13 @@ function checkAnswer() {
   if (isCorrect) {
     correctCount++;
     feedback.className = 'feedback correct';
-    feedback.innerHTML = `<div class="result-icon">⭕</div><div class="result-label">正解！</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div><div class="answer-detail">${detailHtml}</div>`;
+    feedback.innerHTML = `<div class="result-icon">⭕</div><div class="result-label">正解！</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
     speakKorean(correctAnswer);
     updateScoreBar();
     setTimeout(nextQuestion, 2000);
   } else {
     feedback.className = 'feedback wrong';
-    feedback.innerHTML = `<div class="result-icon">❌</div><div class="result-label">不正解</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div><div class="answer-detail">${detailHtml}</div>`;
+    feedback.innerHTML = `<div class="result-icon">❌</div><div class="result-label">不正解</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
     speakKorean(correctAnswer);
     mistakes.push({ question: questionText, correctAnswer, yourAnswer: input });
     document.getElementById('next-btn').style.display = 'block';
@@ -1847,7 +1847,7 @@ function skipQuestion() {
   const feedback = document.getElementById('feedback');
   const escaped = correctAnswer.replace(/'/g, "\\'");
   feedback.className = 'feedback wrong';
-  feedback.innerHTML = `<div class="result-icon">⏭️</div><div class="result-label">スキップ</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div><div class="answer-detail">${detailHtml}</div>`;
+  feedback.innerHTML = `<div class="result-icon">⏭️</div><div class="result-label">スキップ</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
   speakKorean(correctAnswer);
   mistakes.push({ question: questionText, correctAnswer, yourAnswer: '' });
   document.getElementById('next-btn').style.display = 'block';
@@ -1875,25 +1875,31 @@ let recognition = null, isListening = false;
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SR();
-  recognition.lang = 'ko-KR'; recognition.interimResults = false; recognition.continuous = false;
+  recognition.lang = 'ko-KR'; recognition.interimResults = true; recognition.continuous = false; recognition.maxAlternatives = 1;
   recognition.onresult = (e) => {
-    const t = e.results[0][0].transcript;
+    const result = e.results[0];
+    const t = result[0].transcript;
+    const vs = document.getElementById('voice-status');
     document.getElementById('answer-input').value = t;
-    // 認識結果と正誤を即座に表示
+    if (!result.isFinal) {
+      // 中間結果をリアルタイム表示
+      vs.innerHTML = `<span style="color:#ffcc00;font-size:1rem;">🎧 認識中: ${t}</span>`;
+      return;
+    }
+    // 確定結果で正誤判定
     const { correctAnswer } = getCorrectInfo();
     const ni = normalize(t);
     const isNum = (mode === 'sino' || mode === 'native');
     const ok = isNum
       ? ni.replace(/\s/g,'') === correctAnswer.replace(/\s/g,'')
       : normalize(correctAnswer) === ni;
-    const vs = document.getElementById('voice-status');
     if (ok) {
       vs.innerHTML = `<span style="color:#4ecca3;font-size:1rem;font-weight:bold;">⭕ 正解！</span> 認識: ${t}`;
     } else {
       vs.innerHTML = `<span style="color:#e94560;font-size:1rem;font-weight:bold;">❌ 不正解</span> 認識: ${t}`;
     }
     stopListening();
-    setTimeout(checkAnswer, 500);
+    setTimeout(checkAnswer, 300);
   };
   recognition.onerror = (e) => {
     document.getElementById('voice-status').textContent = e.error === 'no-speech' ? '音声が検出されませんでした' : `エラー: ${e.error}`;
