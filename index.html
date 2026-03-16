@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPIK 1-2級 韓国語クイズ</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #1a1a2e;
+  color: #eee;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; }
+.screen { display: none; width: 100%; max-width: 600px; padding: 0 16px; }
+.screen.active { display: flex; flex-direction: column; align-items: center; }
+
+/* === コース選択画面 === */
+.course-grid { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 8px; }
+.course-card {
+  background: #16213e; border-radius: 14px; padding: 18px 20px;
+  cursor: pointer; transition: all 0.2s; border: 2px solid transparent;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.course-card:hover { border-color: #e94560; }
+.course-card .left { display: flex; flex-direction: column; }
+.course-card .title { font-size: 1.1rem; font-weight: bold; }
+.course-card .desc { font-size: 0.8rem; color: #888; margin-top: 4px; }
+.course-card .time { font-size: 1.2rem; color: #e94560; font-weight: bold; }
+.section-label { font-size: 0.8rem; color: #666; margin-top: 16px; margin-bottom: 4px; letter-spacing: 1px; }
+
+/* === クイズ画面 === */
+.quiz-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.timer { font-size: 1.4rem; font-weight: bold; color: #e94560; }
+.timer.warn { animation: blink 0.5s infinite; }
+@keyframes blink { 50% { opacity: 0.4; } }
+.score-bar { font-size: 0.85rem; color: #888; }
+.card {
+  background: #16213e; border-radius: 16px; padding: 32px 24px;
+  text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  width: 100%; margin-bottom: 16px;
+}
+.card .label { font-size: 0.75rem; color: #888; margin-bottom: 8px; letter-spacing: 1px; }
+.card .question { font-size: 1.6rem; font-weight: bold; color: #fff; line-height: 1.5; }
+.card .hint { font-size: 0.85rem; color: #666; margin-top: 8px; }
+.input-area { width: 100%; }
+.input-row { display: flex; gap: 8px; margin-bottom: 8px; justify-content: center; }
+#answer-input {
+  flex: 1; padding: 14px 16px; font-size: 1.1rem;
+  border: 2px solid #333; border-radius: 12px;
+  background: #0f3460; color: #fff; outline: none;
+}
+#answer-input:focus { border-color: #e94560; }
+#answer-input::placeholder { color: #555; }
+.btn { padding: 14px 20px; border: none; border-radius: 12px; font-size: 0.95rem; cursor: pointer; }
+.btn-primary { background: #e94560; color: #fff; }
+.btn-skip { background: #333; color: #aaa; }
+.btn-next { background: #533483; color: #fff; display: none; margin: 8px auto; }
+#mic-btn {
+  padding: 16px 28px; background: #0f3460; color: #e94560;
+  border: 2px solid #333; border-radius: 16px; font-size: 1.2rem;
+  cursor: pointer; transition: all 0.2s;
+}
+#mic-btn.listening {
+  background: #e94560; color: #fff; border-color: #e94560;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(233,69,96,0.4); }
+  50% { box-shadow: 0 0 0 12px rgba(233,69,96,0); }
+}
+.voice-status { text-align: center; color: #888; font-size: 0.8rem; margin-top: 4px; min-height: 20px; }
+.feedback { width: 100%; text-align: center; min-height: 60px; margin: 8px 0; }
+.feedback.correct { color: #4ecca3; }
+.feedback.wrong { color: #e94560; }
+.feedback .answer-display { font-size: 1.3rem; font-weight: bold; margin: 4px 0; }
+.feedback .answer-detail { font-size: 0.85rem; color: #aaa; }
+.speak-btn { background: none; border: none; color: #4ecca3; font-size: 1.1rem; cursor: pointer; margin-left: 6px; }
+.quit-btn { background: none; border: 1px solid #444; color: #888; padding: 6px 14px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
+
+/* === 結果画面 === */
+.result-summary {
+  background: #16213e; border-radius: 16px; padding: 28px;
+  text-align: center; width: 100%; margin-bottom: 16px;
+}
+.result-summary .big { font-size: 2.5rem; font-weight: bold; color: #4ecca3; }
+.result-summary .sub { font-size: 0.9rem; color: #888; margin-top: 4px; }
+.mistake-list { width: 100%; margin-bottom: 16px; }
+.mistake-list h3 { font-size: 0.9rem; color: #e94560; margin-bottom: 8px; }
+.mistake-item {
+  background: #16213e; border-radius: 10px; padding: 12px 16px;
+  margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;
+}
+.mistake-item .word { font-size: 1.1rem; font-weight: bold; }
+.mistake-item .meaning { font-size: 0.85rem; color: #888; }
+.btn-home { background: #e94560; color: #fff; padding: 14px 40px; border: none; border-radius: 12px; font-size: 1rem; cursor: pointer; margin: 12px 0; }
+</style>
+</head>
+<body>
+
+<!-- ===== コース選択画面 ===== -->
+<div class="screen active" id="screen-home">
+  <h1>TOPIK 1-2級 韓国語クイズ</h1>
+  <div class="section-label">単語コース</div>
+  <div class="course-grid">
+    <div class="course-card" onclick="startCourse('word',3)">
+      <div class="left"><div class="title">単語クイズ</div><div class="desc">日本語 → 韓国語を答える</div></div>
+      <div class="time">3分</div>
+    </div>
+    <div class="course-card" onclick="startCourse('word',5)">
+      <div class="left"><div class="title">単語クイズ</div><div class="desc">日本語 → 韓国語を答える</div></div>
+      <div class="time">5分</div>
+    </div>
+    <div class="course-card" onclick="startCourse('word',10)">
+      <div class="left"><div class="title">単語クイズ</div><div class="desc">日本語 → 韓国語を答える</div></div>
+      <div class="time">10分</div>
+    </div>
+  </div>
+  <div class="section-label">例文コース</div>
+  <div class="course-grid">
+    <div class="course-card" onclick="startCourse('sentence',3)">
+      <div class="left"><div class="title">例文クイズ</div><div class="desc">日本語例文 → 韓国語で答える</div></div>
+      <div class="time">3分</div>
+    </div>
+    <div class="course-card" onclick="startCourse('sentence',5)">
+      <div class="left"><div class="title">例文クイズ</div><div class="desc">日本語例文 → 韓国語で答える</div></div>
+      <div class="time">5分</div>
+    </div>
+  </div>
+  <div class="section-label">旅行フレーズコース</div>
+  <div class="course-grid">
+    <div class="course-card" onclick="startCourse('travel',3)">
+      <div class="left"><div class="title">旅行フレーズ</div><div class="desc">日本語 → 韓国語フレーズを答える</div></div>
+      <div class="time">3分</div>
+    </div>
+    <div class="course-card" onclick="startCourse('travel',5)">
+      <div class="left"><div class="title">旅行フレーズ</div><div class="desc">日本語 → 韓国語フレーズを答える</div></div>
+      <div class="time">5分</div>
+    </div>
+    <div class="course-card" onclick="startCourse('travel',10)">
+      <div class="left"><div class="title">旅行フレーズ</div><div class="desc">日本語 → 韓国語フレーズを答える</div></div>
+      <div class="time">10分</div>
+    </div>
+  </div>
+  <div class="section-label">一言フレーズ（別れ際・締めの一言）</div>
+  <div class="course-grid">
+    <div class="course-card" onclick="startCourse('hitokoto',3)">
+      <div class="left"><div class="title">一言フレーズ</div><div class="desc">場面別の締めの一言を韓国語で</div></div>
+      <div class="time">3分</div>
+    </div>
+    <div class="course-card" onclick="startCourse('hitokoto',5)">
+      <div class="left"><div class="title">一言フレーズ</div><div class="desc">場面別の締めの一言を韓国語で</div></div>
+      <div class="time">5分</div>
+    </div>
+    <div class="course-card" onclick="startCourse('hitokoto',10)">
+      <div class="left"><div class="title">一言フレーズ</div><div class="desc">場面別の締めの一言を韓国語で</div></div>
+      <div class="time">10分</div>
+    </div>
+  </div>
+  <div class="section-label">数字コース（漢数詞: 일, 이, 삼...）</div>
+  <div class="course-grid">
+    <div class="course-card" onclick="startCourse('sino',3)">
+      <div class="left"><div class="title">漢数詞クイズ</div><div class="desc">1〜9999 → 일, 이, 삼, 십, 백, 천</div></div>
+      <div class="time">3分</div>
+    </div>
+    <div class="course-card" onclick="startCourse('sino',5)">
+      <div class="left"><div class="title">漢数詞クイズ</div><div class="desc">1〜9999 → 일, 이, 삼, 십, 백, 천</div></div>
+      <div class="time">5分</div>
+    </div>
+  </div>
+  <div class="section-label">数字コース（固有数詞: 하나, 둘, 셋...）</div>
+  <div class="course-grid">
+    <div class="course-card" onclick="startCourse('native',3)">
+      <div class="left"><div class="title">固有数詞クイズ</div><div class="desc">1〜99 → 하나, 둘, 열, 스물...</div></div>
+      <div class="time">3分</div>
+    </div>
+    <div class="course-card" onclick="startCourse('native',5)">
+      <div class="left"><div class="title">固有数詞クイズ</div><div class="desc">1〜99 → 하나, 둘, 열, 스물...</div></div>
+      <div class="time">5分</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== クイズ画面 ===== -->
+<div class="screen" id="screen-quiz">
+  <div class="quiz-header">
+    <button class="quit-btn" onclick="endCourse()">やめる</button>
+    <div class="timer" id="timer">3:00</div>
+    <div class="score-bar" id="score-bar">0問</div>
+  </div>
+  <div class="card">
+    <div class="label" id="card-label">日本語 → 韓国語</div>
+    <div class="question" id="question">読み込み中...</div>
+    <div class="hint" id="hint"></div>
+  </div>
+  <div class="input-area">
+    <div class="input-row" id="voice-row">
+      <button id="mic-btn" onclick="toggleListening()">🎤 タップして話す</button>
+    </div>
+    <div class="input-row" id="keyboard-row" style="display:none;">
+      <input type="text" id="answer-input" placeholder="韓国語で入力..." autocomplete="off">
+      <button class="btn btn-primary" onclick="checkAnswer()">判定</button>
+    </div>
+    <div class="input-row" style="justify-content:center; gap:12px;">
+      <button class="btn btn-skip" onclick="skipQuestion()">スキップ</button>
+      <button class="btn btn-skip" id="toggle-input-btn" onclick="toggleInputMethod()">キーボード</button>
+    </div>
+    <div class="voice-status" id="voice-status"></div>
+  </div>
+  <div class="feedback" id="feedback"></div>
+  <button class="btn btn-next" id="next-btn" onclick="nextQuestion()">次の問題 →</button>
+</div>
+
+<!-- ===== 結果画面 ===== -->
+<div class="screen" id="screen-result">
+  <h1>結果発表</h1>
+  <div class="result-summary">
+    <div class="big" id="result-score">0 / 0</div>
+    <div class="sub" id="result-detail">正解率 0%</div>
+  </div>
+  <div class="mistake-list" id="mistake-list"></div>
+  <button class="btn-home" onclick="goHome()">コース選択に戻る</button>
+</div>
+
+<script>
+// ===== 単語データ =====
+const words = [
+  {korean:"사람",japanese:"人",exampleKr:"좋은 사람을 만났어요.",exampleJp:"良い人に会いました。"},
+  {korean:"남자",japanese:"男",exampleKr:"그 남자는 키가 커요.",exampleJp:"その男は背が高いです。"},
+  {korean:"여자",japanese:"女",exampleKr:"그 여자는 예뻐요.",exampleJp:"その女性はきれいです。"},
+  {korean:"아이",japanese:"子供",exampleKr:"아이가 놀고 있어요.",exampleJp:"子供が遊んでいます。"},
+  {korean:"아기",japanese:"赤ちゃん",exampleKr:"아기가 울고 있어요.",exampleJp:"赤ちゃんが泣いています。"},
+  {korean:"친구",japanese:"友達",exampleKr:"친구와 같이 갔어요.",exampleJp:"友達と一緒に行きました。"},
+  {korean:"가족",japanese:"家族",exampleKr:"가족이 모두 모였어요.",exampleJp:"家族がみんな集まりました。"},
+  {korean:"부모",japanese:"両親",exampleKr:"부모님께 전화했어요.",exampleJp:"両親に電話しました。"},
+  {korean:"아버지",japanese:"お父さん",exampleKr:"아버지는 회사에 가요.",exampleJp:"お父さんは会社に行きます。"},
+  {korean:"어머니",japanese:"お母さん",exampleKr:"어머니가 요리해요.",exampleJp:"お母さんが料理します。"},
+  {korean:"형",japanese:"お兄さん（男→男）",exampleKr:"형이 도와줬어요.",exampleJp:"お兄さんが助けてくれました。"},
+  {korean:"오빠",japanese:"お兄さん（女→男）",exampleKr:"오빠가 선물을 줬어요.",exampleJp:"お兄さんがプレゼントをくれました。"},
+  {korean:"누나",japanese:"お姉さん（男→女）",exampleKr:"누나가 학교에 가요.",exampleJp:"お姉さんが学校に行きます。"},
+  {korean:"언니",japanese:"お姉さん（女→女）",exampleKr:"언니랑 쇼핑했어요.",exampleJp:"お姉さんとショッピングしました。"},
+  {korean:"동생",japanese:"弟・妹",exampleKr:"동생이 공부해요.",exampleJp:"弟（妹）が勉強しています。"},
+  {korean:"남편",japanese:"夫",exampleKr:"남편이 요리를 잘해요.",exampleJp:"夫は料理が上手です。"},
+  {korean:"아내",japanese:"妻",exampleKr:"아내와 산책했어요.",exampleJp:"妻と散歩しました。"},
+  {korean:"선생님",japanese:"先生",exampleKr:"선생님이 설명해요.",exampleJp:"先生が説明します。"},
+  {korean:"학생",japanese:"学生",exampleKr:"학생들이 많아요.",exampleJp:"学生が多いです。"},
+  {korean:"의사",japanese:"医者",exampleKr:"의사가 되고 싶어요.",exampleJp:"医者になりたいです。"},
+  {korean:"집",japanese:"家",exampleKr:"집에 가고 싶어요.",exampleJp:"家に帰りたいです。"},
+  {korean:"학교",japanese:"学校",exampleKr:"학교에서 공부해요.",exampleJp:"学校で勉強します。"},
+  {korean:"회사",japanese:"会社",exampleKr:"회사에 다녀요.",exampleJp:"会社に通っています。"},
+  {korean:"병원",japanese:"病院",exampleKr:"병원에 갔어요.",exampleJp:"病院に行きました。"},
+  {korean:"은행",japanese:"銀行",exampleKr:"은행에서 돈을 찾았어요.",exampleJp:"銀行でお金を下ろしました。"},
+  {korean:"가게",japanese:"店",exampleKr:"가게에서 물건을 샀어요.",exampleJp:"店で物を買いました。"},
+  {korean:"식당",japanese:"食堂・レストラン",exampleKr:"식당에서 밥을 먹어요.",exampleJp:"食堂でご飯を食べます。"},
+  {korean:"공원",japanese:"公園",exampleKr:"공원에서 운동해요.",exampleJp:"公園で運動します。"},
+  {korean:"시장",japanese:"市場",exampleKr:"시장에서 과일을 샀어요.",exampleJp:"市場で果物を買いました。"},
+  {korean:"도서관",japanese:"図書館",exampleKr:"도서관에서 책을 읽어요.",exampleJp:"図書館で本を読みます。"},
+  {korean:"공항",japanese:"空港",exampleKr:"공항에 도착했어요.",exampleJp:"空港に到着しました。"},
+  {korean:"역",japanese:"駅",exampleKr:"역에서 기다려요.",exampleJp:"駅で待っています。"},
+  {korean:"호텔",japanese:"ホテル",exampleKr:"호텔에서 쉬었어요.",exampleJp:"ホテルで休みました。"},
+  {korean:"교실",japanese:"教室",exampleKr:"교실이 넓어요.",exampleJp:"教室が広いです。"},
+  {korean:"방",japanese:"部屋",exampleKr:"방이 깨끗해요.",exampleJp:"部屋がきれいです。"},
+  {korean:"화장실",japanese:"トイレ",exampleKr:"화장실이 어디예요?",exampleJp:"トイレはどこですか？"},
+  {korean:"나라",japanese:"国",exampleKr:"어느 나라에서 왔어요?",exampleJp:"どの国から来ましたか？"},
+  {korean:"도시",japanese:"都市",exampleKr:"이 도시는 커요.",exampleJp:"この都市は大きいです。"},
+  {korean:"밥",japanese:"ご飯",exampleKr:"밥을 먹었어요.",exampleJp:"ご飯を食べました。"},
+  {korean:"물",japanese:"水",exampleKr:"물을 마셔요.",exampleJp:"水を飲みます。"},
+  {korean:"고기",japanese:"肉",exampleKr:"고기를 좋아해요.",exampleJp:"肉が好きです。"},
+  {korean:"생선",japanese:"魚",exampleKr:"생선이 신선해요.",exampleJp:"魚が新鮮です。"},
+  {korean:"과일",japanese:"果物",exampleKr:"과일을 많이 먹어요.",exampleJp:"果物をたくさん食べます。"},
+  {korean:"야채",japanese:"野菜",exampleKr:"야채를 많이 먹어야 해요.",exampleJp:"野菜をたくさん食べなければなりません。"},
+  {korean:"빵",japanese:"パン",exampleKr:"아침에 빵을 먹어요.",exampleJp:"朝にパンを食べます。"},
+  {korean:"커피",japanese:"コーヒー",exampleKr:"커피를 마셔요.",exampleJp:"コーヒーを飲みます。"},
+  {korean:"차",japanese:"お茶",exampleKr:"따뜻한 차를 마셔요.",exampleJp:"温かいお茶を飲みます。"},
+  {korean:"우유",japanese:"牛乳",exampleKr:"우유를 매일 마셔요.",exampleJp:"牛乳を毎日飲みます。"},
+  {korean:"맥주",japanese:"ビール",exampleKr:"맥주를 한 잔 주세요.",exampleJp:"ビールを一杯ください。"},
+  {korean:"라면",japanese:"ラーメン",exampleKr:"라면을 끓였어요.",exampleJp:"ラーメンを作りました。"},
+  {korean:"김치",japanese:"キムチ",exampleKr:"김치를 담갔어요.",exampleJp:"キムチを漬けました。"},
+  {korean:"사과",japanese:"りんご",exampleKr:"사과를 깎았어요.",exampleJp:"りんごの皮をむきました。"},
+  {korean:"시간",japanese:"時間",exampleKr:"시간이 없어요.",exampleJp:"時間がありません。"},
+  {korean:"오늘",japanese:"今日",exampleKr:"오늘 날씨가 좋아요.",exampleJp:"今日天気がいいです。"},
+  {korean:"내일",japanese:"明日",exampleKr:"내일 만나요.",exampleJp:"明日会いましょう。"},
+  {korean:"어제",japanese:"昨日",exampleKr:"어제 영화를 봤어요.",exampleJp:"昨日映画を見ました。"},
+  {korean:"아침",japanese:"朝",exampleKr:"아침에 일찍 일어나요.",exampleJp:"朝早く起きます。"},
+  {korean:"점심",japanese:"昼",exampleKr:"점심을 같이 먹어요.",exampleJp:"昼を一緒に食べましょう。"},
+  {korean:"저녁",japanese:"夕方・夜",exampleKr:"저녁에 산책해요.",exampleJp:"夕方に散歩します。"},
+  {korean:"밤",japanese:"夜",exampleKr:"밤에 별을 봤어요.",exampleJp:"夜に星を見ました。"},
+  {korean:"주말",japanese:"週末",exampleKr:"주말에 뭐 해요?",exampleJp:"週末に何をしますか？"},
+  {korean:"생일",japanese:"誕生日",exampleKr:"오늘이 생일이에요.",exampleJp:"今日が誕生日です。"},
+  {korean:"올해",japanese:"今年",exampleKr:"올해 한국어를 배워요.",exampleJp:"今年韓国語を学んでいます。"},
+  {korean:"책",japanese:"本",exampleKr:"책을 읽어요.",exampleJp:"本を読みます。"},
+  {korean:"돈",japanese:"お金",exampleKr:"돈이 없어요.",exampleJp:"お金がありません。"},
+  {korean:"전화",japanese:"電話",exampleKr:"전화를 받으세요.",exampleJp:"電話を取ってください。"},
+  {korean:"사진",japanese:"写真",exampleKr:"사진을 찍었어요.",exampleJp:"写真を撮りました。"},
+  {korean:"가방",japanese:"かばん",exampleKr:"가방이 무거워요.",exampleJp:"かばんが重いです。"},
+  {korean:"옷",japanese:"服",exampleKr:"새 옷을 샀어요.",exampleJp:"新しい服を買いました。"},
+  {korean:"신발",japanese:"靴",exampleKr:"신발을 벗으세요.",exampleJp:"靴を脱いでください。"},
+  {korean:"컴퓨터",japanese:"パソコン",exampleKr:"컴퓨터로 일해요.",exampleJp:"パソコンで仕事をします。"},
+  {korean:"휴대폰",japanese:"携帯電話",exampleKr:"휴대폰을 잃어버렸어요.",exampleJp:"携帯電話をなくしました。"},
+  {korean:"우산",japanese:"傘",exampleKr:"우산을 가져가세요.",exampleJp:"傘を持っていってください。"},
+  {korean:"선물",japanese:"プレゼント",exampleKr:"선물을 받았어요.",exampleJp:"プレゼントをもらいました。"},
+  {korean:"날씨",japanese:"天気",exampleKr:"날씨가 추워요.",exampleJp:"天気が寒いです。"},
+  {korean:"비",japanese:"雨",exampleKr:"비가 와요.",exampleJp:"雨が降っています。"},
+  {korean:"눈",japanese:"雪・目",exampleKr:"눈이 많이 왔어요.",exampleJp:"雪がたくさん降りました。"},
+  {korean:"산",japanese:"山",exampleKr:"산에 올라갔어요.",exampleJp:"山に登りました。"},
+  {korean:"바다",japanese:"海",exampleKr:"바다에서 수영했어요.",exampleJp:"海で泳ぎました。"},
+  {korean:"꽃",japanese:"花",exampleKr:"꽃이 예뻐요.",exampleJp:"花がきれいです。"},
+  {korean:"머리",japanese:"頭・髪",exampleKr:"머리가 아파요.",exampleJp:"頭が痛いです。"},
+  {korean:"손",japanese:"手",exampleKr:"손을 씻으세요.",exampleJp:"手を洗ってください。"},
+  {korean:"배",japanese:"お腹・船",exampleKr:"배가 고파요.",exampleJp:"お腹が空いています。"},
+  {korean:"이름",japanese:"名前",exampleKr:"이름이 뭐예요?",exampleJp:"名前は何ですか？"},
+  {korean:"일",japanese:"仕事・こと",exampleKr:"일이 많아요.",exampleJp:"仕事が多いです。"},
+  {korean:"여행",japanese:"旅行",exampleKr:"여행을 좋아해요.",exampleJp:"旅行が好きです。"},
+  {korean:"운동",japanese:"運動",exampleKr:"매일 운동해요.",exampleJp:"毎日運動します。"},
+  {korean:"음악",japanese:"音楽",exampleKr:"음악을 들어요.",exampleJp:"音楽を聴きます。"},
+  {korean:"영화",japanese:"映画",exampleKr:"영화를 보러 가요.",exampleJp:"映画を見に行きます。"},
+  {korean:"노래",japanese:"歌",exampleKr:"노래를 잘 불러요.",exampleJp:"歌が上手です。"},
+  {korean:"약",japanese:"薬",exampleKr:"약을 먹었어요.",exampleJp:"薬を飲みました。"},
+  {korean:"시험",japanese:"試験",exampleKr:"시험을 잘 봤어요.",exampleJp:"試験がよくできました。"},
+  {korean:"봄",japanese:"春",exampleKr:"봄에 꽃이 펴요.",exampleJp:"春に花が咲きます。"},
+  {korean:"여름",japanese:"夏",exampleKr:"여름에 바다에 가요.",exampleJp:"夏に海に行きます。"},
+  {korean:"가을",japanese:"秋",exampleKr:"가을에 단풍이 예뻐요.",exampleJp:"秋に紅葉がきれいです。"},
+  {korean:"겨울",japanese:"冬",exampleKr:"겨울에 눈이 와요.",exampleJp:"冬に雪が降ります。"},
+  {korean:"약속",japanese:"約束",exampleKr:"약속이 있어요.",exampleJp:"約束があります。"},
+  {korean:"기분",japanese:"気分",exampleKr:"기분이 좋아요.",exampleJp:"気分がいいです。"},
+  {korean:"버스",japanese:"バス",exampleKr:"버스를 타요.",exampleJp:"バスに乗ります。"},
+  {korean:"지하철",japanese:"地下鉄",exampleKr:"지하철로 가요.",exampleJp:"地下鉄で行きます。"},
+  {korean:"택시",japanese:"タクシー",exampleKr:"택시를 불렀어요.",exampleJp:"タクシーを呼びました。"},
+  {korean:"문",japanese:"ドア",exampleKr:"문을 닫아 주세요.",exampleJp:"ドアを閉めてください。"},
+  {korean:"의자",japanese:"椅子",exampleKr:"의자에 앉으세요.",exampleJp:"椅子に座ってください。"},
+  {korean:"편의점",japanese:"コンビニ",exampleKr:"편의점에서 샀어요.",exampleJp:"コンビニで買いました。"},
+  {korean:"카페",japanese:"カフェ",exampleKr:"카페에서 만나요.",exampleJp:"カフェで会いましょう。"},
+  {korean:"공부",japanese:"勉強",exampleKr:"한국어 공부를 해요.",exampleJp:"韓国語の勉強をします。"},
+  {korean:"감기",japanese:"風邪",exampleKr:"감기에 걸렸어요.",exampleJp:"風邪をひきました。"},
+  {korean:"시계",japanese:"時計",exampleKr:"시계를 봤어요.",exampleJp:"時計を見ました。"},
+  {korean:"지갑",japanese:"財布",exampleKr:"지갑을 잃어버렸어요.",exampleJp:"財布をなくしました。"},
+  // 動詞
+  {korean:"가다",japanese:"行く",exampleKr:"학교에 가요.",exampleJp:"学校に行きます。"},
+  {korean:"오다",japanese:"来る",exampleKr:"친구가 왔어요.",exampleJp:"友達が来ました。"},
+  {korean:"먹다",japanese:"食べる",exampleKr:"점심을 먹어요.",exampleJp:"昼ご飯を食べます。"},
+  {korean:"마시다",japanese:"飲む",exampleKr:"물을 마셔요.",exampleJp:"水を飲みます。"},
+  {korean:"하다",japanese:"する",exampleKr:"운동을 해요.",exampleJp:"運動をします。"},
+  {korean:"보다",japanese:"見る",exampleKr:"텔레비전을 봐요.",exampleJp:"テレビを見ます。"},
+  {korean:"읽다",japanese:"読む",exampleKr:"책을 읽어요.",exampleJp:"本を読みます。"},
+  {korean:"쓰다",japanese:"書く・使う",exampleKr:"편지를 써요.",exampleJp:"手紙を書きます。"},
+  {korean:"듣다",japanese:"聞く",exampleKr:"음악을 들어요.",exampleJp:"音楽を聴きます。"},
+  {korean:"말하다",japanese:"話す",exampleKr:"한국어로 말해요.",exampleJp:"韓国語で話します。"},
+  {korean:"사다",japanese:"買う",exampleKr:"선물을 샀어요.",exampleJp:"プレゼントを買いました。"},
+  {korean:"주다",japanese:"あげる",exampleKr:"선물을 줬어요.",exampleJp:"プレゼントをあげました。"},
+  {korean:"받다",japanese:"もらう",exampleKr:"편지를 받았어요.",exampleJp:"手紙をもらいました。"},
+  {korean:"알다",japanese:"知っている",exampleKr:"그 사람을 알아요.",exampleJp:"その人を知っています。"},
+  {korean:"모르다",japanese:"知らない",exampleKr:"길을 몰라요.",exampleJp:"道がわかりません。"},
+  {korean:"있다",japanese:"ある・いる",exampleKr:"시간이 있어요.",exampleJp:"時間があります。"},
+  {korean:"없다",japanese:"ない・いない",exampleKr:"돈이 없어요.",exampleJp:"お金がありません。"},
+  {korean:"좋아하다",japanese:"好きだ",exampleKr:"한국 음식을 좋아해요.",exampleJp:"韓国料理が好きです。"},
+  {korean:"만나다",japanese:"会う",exampleKr:"친구를 만나요.",exampleJp:"友達に会います。"},
+  {korean:"기다리다",japanese:"待つ",exampleKr:"여기서 기다려 주세요.",exampleJp:"ここで待ってください。"},
+  {korean:"걷다",japanese:"歩く",exampleKr:"공원에서 걸어요.",exampleJp:"公園を歩きます。"},
+  {korean:"앉다",japanese:"座る",exampleKr:"의자에 앉으세요.",exampleJp:"椅子に座ってください。"},
+  {korean:"자다",japanese:"寝る",exampleKr:"일찍 자요.",exampleJp:"早く寝ます。"},
+  {korean:"일어나다",japanese:"起きる",exampleKr:"아침에 일어나요.",exampleJp:"朝に起きます。"},
+  {korean:"살다",japanese:"住む・生きる",exampleKr:"서울에 살아요.",exampleJp:"ソウルに住んでいます。"},
+  {korean:"배우다",japanese:"学ぶ",exampleKr:"한국어를 배워요.",exampleJp:"韓国語を学びます。"},
+  {korean:"가르치다",japanese:"教える",exampleKr:"영어를 가르쳐요.",exampleJp:"英語を教えます。"},
+  {korean:"일하다",japanese:"働く",exampleKr:"매일 일해요.",exampleJp:"毎日働きます。"},
+  {korean:"쉬다",japanese:"休む",exampleKr:"좀 쉬세요.",exampleJp:"少し休んでください。"},
+  {korean:"타다",japanese:"乗る",exampleKr:"버스를 타요.",exampleJp:"バスに乗ります。"},
+  {korean:"열다",japanese:"開ける",exampleKr:"문을 열어 주세요.",exampleJp:"ドアを開けてください。"},
+  {korean:"닫다",japanese:"閉める",exampleKr:"창문을 닫아 주세요.",exampleJp:"窓を閉めてください。"},
+  {korean:"찾다",japanese:"探す",exampleKr:"열쇠를 찾았어요.",exampleJp:"鍵を見つけました。"},
+  {korean:"만들다",japanese:"作る",exampleKr:"케이크를 만들었어요.",exampleJp:"ケーキを作りました。"},
+  {korean:"시작하다",japanese:"始める",exampleKr:"수업을 시작해요.",exampleJp:"授業を始めます。"},
+  {korean:"끝나다",japanese:"終わる",exampleKr:"수업이 끝났어요.",exampleJp:"授業が終わりました。"},
+  {korean:"전화하다",japanese:"電話する",exampleKr:"친구에게 전화했어요.",exampleJp:"友達に電話しました。"},
+  {korean:"요리하다",japanese:"料理する",exampleKr:"저녁을 요리해요.",exampleJp:"夕食を料理します。"},
+  {korean:"청소하다",japanese:"掃除する",exampleKr:"방을 청소해요.",exampleJp:"部屋を掃除します。"},
+  {korean:"준비하다",japanese:"準備する",exampleKr:"시험을 준비해요.",exampleJp:"試験を準備します。"},
+  {korean:"도와주다",japanese:"手伝う",exampleKr:"좀 도와주세요.",exampleJp:"ちょっと手伝ってください。"},
+  {korean:"씻다",japanese:"洗う",exampleKr:"손을 씻으세요.",exampleJp:"手を洗ってください。"},
+  {korean:"입다",japanese:"着る",exampleKr:"예쁜 옷을 입었어요.",exampleJp:"きれいな服を着ました。"},
+  {korean:"보내다",japanese:"送る",exampleKr:"메시지를 보냈어요.",exampleJp:"メッセージを送りました。"},
+  {korean:"켜다",japanese:"つける（電気）",exampleKr:"불을 켜 주세요.",exampleJp:"電気をつけてください。"},
+  {korean:"끄다",japanese:"消す",exampleKr:"불을 꺼 주세요.",exampleJp:"電気を消してください。"},
+  {korean:"걸리다",japanese:"かかる",exampleKr:"한 시간 걸려요.",exampleJp:"1時間かかります。"},
+  // 形容詞
+  {korean:"좋다",japanese:"良い",exampleKr:"날씨가 좋아요.",exampleJp:"天気がいいです。"},
+  {korean:"나쁘다",japanese:"悪い",exampleKr:"기분이 나빠요.",exampleJp:"気分が悪いです。"},
+  {korean:"크다",japanese:"大きい",exampleKr:"이 가방이 커요.",exampleJp:"このかばんは大きいです。"},
+  {korean:"작다",japanese:"小さい",exampleKr:"방이 작아요.",exampleJp:"部屋が小さいです。"},
+  {korean:"많다",japanese:"多い",exampleKr:"사람이 많아요.",exampleJp:"人が多いです。"},
+  {korean:"비싸다",japanese:"高い（値段）",exampleKr:"이 옷은 비싸요.",exampleJp:"この服は高いです。"},
+  {korean:"싸다",japanese:"安い",exampleKr:"이 가게는 싸요.",exampleJp:"この店は安いです。"},
+  {korean:"덥다",japanese:"暑い",exampleKr:"오늘 너무 더워요.",exampleJp:"今日とても暑いです。"},
+  {korean:"춥다",japanese:"寒い",exampleKr:"겨울은 추워요.",exampleJp:"冬は寒いです。"},
+  {korean:"맛있다",japanese:"おいしい",exampleKr:"이 음식이 맛있어요.",exampleJp:"この料理がおいしいです。"},
+  {korean:"재미있다",japanese:"面白い",exampleKr:"이 영화가 재미있어요.",exampleJp:"この映画が面白いです。"},
+  {korean:"예쁘다",japanese:"きれいだ",exampleKr:"꽃이 예뻐요.",exampleJp:"花がきれいです。"},
+  {korean:"어렵다",japanese:"難しい",exampleKr:"한국어가 어려워요.",exampleJp:"韓国語が難しいです。"},
+  {korean:"쉽다",japanese:"簡単だ",exampleKr:"이 문제는 쉬워요.",exampleJp:"この問題は簡単です。"},
+  {korean:"바쁘다",japanese:"忙しい",exampleKr:"요즘 바빠요.",exampleJp:"最近忙しいです。"},
+  {korean:"피곤하다",japanese:"疲れている",exampleKr:"오늘 피곤해요.",exampleJp:"今日疲れています。"},
+  {korean:"아프다",japanese:"痛い",exampleKr:"머리가 아파요.",exampleJp:"頭が痛いです。"},
+  {korean:"기쁘다",japanese:"嬉しい",exampleKr:"만나서 기뻐요.",exampleJp:"会えて嬉しいです。"},
+  {korean:"슬프다",japanese:"悲しい",exampleKr:"영화가 슬펐어요.",exampleJp:"映画が悲しかったです。"},
+  {korean:"길다",japanese:"長い",exampleKr:"머리가 길어요.",exampleJp:"髪が長いです。"},
+  {korean:"짧다",japanese:"短い",exampleKr:"치마가 짧아요.",exampleJp:"スカートが短いです。"},
+  {korean:"빠르다",japanese:"速い",exampleKr:"차가 빨라요.",exampleJp:"車が速いです。"},
+  {korean:"느리다",japanese:"遅い",exampleKr:"인터넷이 느려요.",exampleJp:"インターネットが遅いです。"},
+  {korean:"깨끗하다",japanese:"きれいだ（清潔）",exampleKr:"방이 깨끗해요.",exampleJp:"部屋がきれいです。"},
+  {korean:"따뜻하다",japanese:"暖かい",exampleKr:"봄은 따뜻해요.",exampleJp:"春は暖かいです。"},
+  {korean:"맵다",japanese:"辛い",exampleKr:"김치가 매워요.",exampleJp:"キムチが辛いです。"},
+  {korean:"중요하다",japanese:"重要だ",exampleKr:"건강이 중요해요.",exampleJp:"健康が重要です。"},
+  // 副詞
+  {korean:"아주",japanese:"とても",exampleKr:"아주 맛있어요.",exampleJp:"とてもおいしいです。"},
+  {korean:"너무",japanese:"すごく",exampleKr:"너무 비싸요.",exampleJp:"すごく高いです。"},
+  {korean:"많이",japanese:"たくさん",exampleKr:"많이 먹어요.",exampleJp:"たくさん食べます。"},
+  {korean:"조금",japanese:"少し",exampleKr:"조금만 기다려 주세요.",exampleJp:"少しだけ待ってください。"},
+  {korean:"빨리",japanese:"早く",exampleKr:"빨리 와요.",exampleJp:"早く来てください。"},
+  {korean:"천천히",japanese:"ゆっくり",exampleKr:"천천히 말해 주세요.",exampleJp:"ゆっくり話してください。"},
+  {korean:"잘",japanese:"よく・上手に",exampleKr:"잘 지내요?",exampleJp:"元気ですか？"},
+  {korean:"항상",japanese:"いつも",exampleKr:"항상 감사해요.",exampleJp:"いつも感謝しています。"},
+  {korean:"가끔",japanese:"たまに",exampleKr:"가끔 영화를 봐요.",exampleJp:"たまに映画を見ます。"},
+  {korean:"같이",japanese:"一緒に",exampleKr:"같이 가요.",exampleJp:"一緒に行きましょう。"},
+  {korean:"정말",japanese:"本当に",exampleKr:"정말 좋아요.",exampleJp:"本当にいいです。"},
+  {korean:"또",japanese:"また",exampleKr:"또 만나요.",exampleJp:"また会いましょう。"},
+  // 表現
+  {korean:"안녕하세요",japanese:"こんにちは",exampleKr:"안녕하세요, 만나서 반갑습니다.",exampleJp:"こんにちは、お会いできて嬉しいです。"},
+  {korean:"감사합니다",japanese:"ありがとうございます",exampleKr:"도와주셔서 감사합니다.",exampleJp:"手伝ってくださりありがとうございます。"},
+  {korean:"죄송합니다",japanese:"すみません",exampleKr:"늦어서 죄송합니다.",exampleJp:"遅れてすみません。"},
+  {korean:"괜찮아요",japanese:"大丈夫です",exampleKr:"걱정하지 마세요, 괜찮아요.",exampleJp:"心配しないでください、大丈夫です。"},
+  {korean:"주세요",japanese:"ください",exampleKr:"물 좀 주세요.",exampleJp:"水をください。"},
+  {korean:"얼마예요",japanese:"いくらですか",exampleKr:"이거 얼마예요?",exampleJp:"これはいくらですか？"},
+];
+
+// ===== 旅行フレーズ =====
+const travel = [
+// 空港
+{korean:"인천공항에 어떻게 가요?",japanese:"仁川空港にはどう行きますか？"},
+{korean:"탑승구가 어디예요?",japanese:"搭乗ゲートはどこですか？"},
+{korean:"비행기가 몇 시에 출발해요?",japanese:"飛行機は何時に出発しますか？"},
+{korean:"짐을 찾고 싶어요.",japanese:"荷物を探したいです。"},
+{korean:"수하물 찾는 곳이 어디예요?",japanese:"手荷物受取所はどこですか？"},
+{korean:"면세점에 가고 싶어요.",japanese:"免税店に行きたいです。"},
+{korean:"환승은 어디서 해요?",japanese:"乗り換えはどこでしますか？"},
+{korean:"입국 심사는 어디예요?",japanese:"入国審査はどこですか？"},
+{korean:"세관 신고할 것이 없어요.",japanese:"税関申告するものはありません。"},
+{korean:"여권을 보여 주세요.",japanese:"パスポートを見せてください。"},
+{korean:"관광 목적이에요.",japanese:"観光目的です。"},
+{korean:"3일 동안 머물 거예요.",japanese:"3日間滞在する予定です。"},
+{korean:"돌아가는 비행기는 내일이에요.",japanese:"帰りの飛行機は明日です。"},
+{korean:"비행기가 지연됐어요.",japanese:"飛行機が遅延しました。"},
+{korean:"비행기가 취소됐어요.",japanese:"飛行機がキャンセルされました。"},
+{korean:"창가 자리로 주세요.",japanese:"窓側の席をお願いします。"},
+{korean:"통로 쪽 자리로 주세요.",japanese:"通路側の席をお願いします。"},
+{korean:"기내식은 언제 나와요?",japanese:"機内食はいつ出ますか？"},
+{korean:"담요 하나 주세요.",japanese:"毛布を1つください。"},
+{korean:"안전벨트를 매 주세요.",japanese:"シートベルトを締めてください。"},
+{korean:"짐이 안 나왔어요.",japanese:"荷物が出てきません。"},
+{korean:"짐이 파손됐어요.",japanese:"荷物が破損しました。"},
+{korean:"공항버스 타는 곳이 어디예요?",japanese:"空港バス乗り場はどこですか？"},
+{korean:"리무진 버스 표를 사고 싶어요.",japanese:"リムジンバスのチケットを買いたいです。"},
+{korean:"공항철도는 어디서 타요?",japanese:"空港鉄道はどこで乗りますか？"},
+// ホテル
+{korean:"예약했어요.",japanese:"予約しました。"},
+{korean:"체크인 해 주세요.",japanese:"チェックインお願いします。"},
+{korean:"체크아웃은 몇 시예요?",japanese:"チェックアウトは何時ですか？"},
+{korean:"방이 있어요?",japanese:"部屋はありますか？"},
+{korean:"1박에 얼마예요?",japanese:"1泊いくらですか？"},
+{korean:"2박 3일 묵을 거예요.",japanese:"2泊3日泊まります。"},
+{korean:"싱글룸으로 주세요.",japanese:"シングルルームをお願いします。"},
+{korean:"트윈룸으로 주세요.",japanese:"ツインルームをお願いします。"},
+{korean:"조식이 포함돼 있어요?",japanese:"朝食は含まれていますか？"},
+{korean:"와이파이 비밀번호가 뭐예요?",japanese:"Wi-Fiのパスワードは何ですか？"},
+{korean:"방 열쇠를 잃어버렸어요.",japanese:"部屋の鍵をなくしました。"},
+{korean:"에어컨이 안 돼요.",japanese:"エアコンが動きません。"},
+{korean:"뜨거운 물이 안 나와요.",japanese:"お湯が出ません。"},
+{korean:"수건을 더 주세요.",japanese:"タオルをもっとください。"},
+{korean:"방을 청소해 주세요.",japanese:"部屋を掃除してください。"},
+{korean:"모닝콜 해 주세요.",japanese:"モーニングコールをお願いします。"},
+{korean:"짐을 맡아 주세요.",japanese:"荷物を預かってください。"},
+{korean:"택시를 불러 주세요.",japanese:"タクシーを呼んでください。"},
+{korean:"늦게 체크아웃할 수 있어요?",japanese:"レイトチェックアウトできますか？"},
+{korean:"방을 바꿔 주세요.",japanese:"部屋を変えてください。"},
+{korean:"옆방이 너무 시끄러워요.",japanese:"隣の部屋がうるさいです。"},
+{korean:"조용한 방으로 주세요.",japanese:"静かな部屋をお願いします。"},
+{korean:"높은 층으로 주세요.",japanese:"高い階をお願いします。"},
+{korean:"경치가 좋은 방이 있어요?",japanese:"景色がいい部屋はありますか？"},
+{korean:"금고가 있어요?",japanese:"金庫はありますか？"},
+{korean:"세탁 서비스가 있어요?",japanese:"ランドリーサービスはありますか？"},
+{korean:"근처에 편의점이 있어요?",japanese:"近くにコンビニはありますか？"},
+{korean:"호텔에서 공항까지 얼마나 걸려요?",japanese:"ホテルから空港までどのくらいかかりますか？"},
+// レストラン
+{korean:"여기 자리 있어요?",japanese:"ここ席ありますか？"},
+{korean:"메뉴 좀 주세요.",japanese:"メニューをください。"},
+{korean:"추천 메뉴가 뭐예요?",japanese:"おすすめメニューは何ですか？"},
+{korean:"이것으로 주세요.",japanese:"これにします。"},
+{korean:"이거 하나 더 주세요.",japanese:"これもう1つください。"},
+{korean:"맵지 않게 해 주세요.",japanese:"辛くしないでください。"},
+{korean:"덜 맵게 해 주세요.",japanese:"辛さを控えめにしてください。"},
+{korean:"소금 좀 주세요.",japanese:"塩をください。"},
+{korean:"물 좀 주세요.",japanese:"お水をください。"},
+{korean:"숟가락 좀 주세요.",japanese:"スプーンをください。"},
+{korean:"젓가락 좀 주세요.",japanese:"お箸をください。"},
+{korean:"포크 좀 주세요.",japanese:"フォークをください。"},
+{korean:"냅킨 좀 주세요.",japanese:"ナプキンをください。"},
+{korean:"계산해 주세요.",japanese:"お会計お願いします。"},
+{korean:"카드로 할게요.",japanese:"カードでお願いします。"},
+{korean:"현금으로 할게요.",japanese:"現金でお願いします。"},
+{korean:"영수증 주세요.",japanese:"領収書をください。"},
+{korean:"포장해 주세요.",japanese:"持ち帰りにしてください。"},
+{korean:"여기서 먹을게요.",japanese:"ここで食べます。"},
+{korean:"아직 안 나왔어요.",japanese:"まだ来ていません。"},
+{korean:"주문 안 했어요.",japanese:"注文していません。"},
+{korean:"이거 주문한 게 아니에요.",japanese:"これは注文したものではありません。"},
+{korean:"맛있어요!",japanese:"おいしいです！"},
+{korean:"배불러요.",japanese:"お腹いっぱいです。"},
+{korean:"잘 먹었습니다.",japanese:"ごちそうさまでした。"},
+{korean:"채식 메뉴가 있어요?",japanese:"ベジタリアンメニューはありますか？"},
+{korean:"알레르기가 있어요.",japanese:"アレルギーがあります。"},
+{korean:"이거 뭐예요?",japanese:"これは何ですか？"},
+{korean:"이거 매워요?",japanese:"これ辛いですか？"},
+{korean:"반찬 더 주세요.",japanese:"おかずをもっとください。"},
+{korean:"소주 한 병 주세요.",japanese:"焼酎1本ください。"},
+{korean:"맥주 두 잔 주세요.",japanese:"ビール2杯ください。"},
+{korean:"건배!",japanese:"乾杯！"},
+{korean:"한 잔 더 할까요?",japanese:"もう1杯どうですか？"},
+{korean:"얼음 넣어 주세요.",japanese:"氷を入れてください。"},
+{korean:"따뜻한 걸로 주세요.",japanese:"温かいのをください。"},
+{korean:"차가운 걸로 주세요.",japanese:"冷たいのをください。"},
+{korean:"디저트 메뉴가 있어요?",japanese:"デザートメニューはありますか？"},
+{korean:"이 근처에 맛집이 있어요?",japanese:"この近くにおいしい店はありますか？"},
+{korean:"예약할 수 있어요?",japanese:"予約できますか？"},
+{korean:"몇 명이에요?",japanese:"何名様ですか？"},
+{korean:"두 명이에요.",japanese:"2名です。"},
+{korean:"금연석으로 주세요.",japanese:"禁煙席をお願いします。"},
+{korean:"이 요리는 뭐가 들어가요?",japanese:"この料理には何が入っていますか？"},
+{korean:"고기가 들어가요?",japanese:"肉が入っていますか？"},
+{korean:"많이 기다려야 해요?",japanese:"たくさん待たないといけませんか？"},
+{korean:"화장실은 어디예요?",japanese:"トイレはどこですか？"},
+// 買い物
+{korean:"이거 얼마예요?",japanese:"これはいくらですか？"},
+{korean:"좀 싸게 해 주세요.",japanese:"少し安くしてください。"},
+{korean:"깎아 주세요.",japanese:"値引きしてください。"},
+{korean:"다른 색 있어요?",japanese:"他の色ありますか？"},
+{korean:"다른 사이즈 있어요?",japanese:"他のサイズありますか？"},
+{korean:"좀 더 큰 거 있어요?",japanese:"もう少し大きいのありますか？"},
+{korean:"좀 더 작은 거 있어요?",japanese:"もう少し小さいのありますか？"},
+{korean:"입어 봐도 돼요?",japanese:"試着してもいいですか？"},
+{korean:"이거 살게요.",japanese:"これ買います。"},
+{korean:"안 살게요.",japanese:"買いません。"},
+{korean:"그냥 볼게요.",japanese:"見ているだけです。"},
+{korean:"선물용으로 포장해 주세요.",japanese:"プレゼント用に包装してください。"},
+{korean:"봉투 주세요.",japanese:"袋をください。"},
+{korean:"세금 포함이에요?",japanese:"税込みですか？"},
+{korean:"세금 환급 돼요?",japanese:"免税になりますか？"},
+{korean:"교환할 수 있어요?",japanese:"交換できますか？"},
+{korean:"환불할 수 있어요?",japanese:"返品できますか？"},
+{korean:"신용카드 돼요?",japanese:"クレジットカード使えますか？"},
+{korean:"현금만 돼요?",japanese:"現金のみですか？"},
+{korean:"영수증 필요해요.",japanese:"レシートが必要です。"},
+{korean:"이거 인기 있어요?",japanese:"これ人気ありますか？"},
+{korean:"추천해 주세요.",japanese:"おすすめしてください。"},
+{korean:"이거 새 거예요?",japanese:"これ新品ですか？"},
+{korean:"이거 한국에서만 살 수 있어요?",japanese:"これは韓国でしか買えませんか？"},
+{korean:"몇 시까지 영업해요?",japanese:"何時まで営業していますか？"},
+{korean:"몇 시에 문 열어요?",japanese:"何時に開店しますか？"},
+// 交通
+{korean:"지하철역이 어디예요?",japanese:"地下鉄の駅はどこですか？"},
+{korean:"버스 정류장이 어디예요?",japanese:"バス停はどこですか？"},
+{korean:"이 버스 명동에 가요?",japanese:"このバスは明洞に行きますか？"},
+{korean:"어디서 내려야 해요?",japanese:"どこで降りないといけませんか？"},
+{korean:"다음 역에서 내릴게요.",japanese:"次の駅で降ります。"},
+{korean:"몇 번 출구예요?",japanese:"何番出口ですか？"},
+{korean:"갈아타야 해요?",japanese:"乗り換えないといけませんか？"},
+{korean:"어디서 갈아타요?",japanese:"どこで乗り換えますか？"},
+{korean:"몇 호선이에요?",japanese:"何号線ですか？"},
+{korean:"교통카드를 사고 싶어요.",japanese:"交通カードを買いたいです。"},
+{korean:"교통카드를 충전해 주세요.",japanese:"交通カードをチャージしてください。"},
+{korean:"만 원 충전해 주세요.",japanese:"1万ウォンチャージしてください。"},
+{korean:"택시 타는 곳이 어디예요?",japanese:"タクシー乗り場はどこですか？"},
+{korean:"여기까지 가 주세요.",japanese:"ここまで行ってください。"},
+{korean:"이 주소로 가 주세요.",japanese:"この住所に行ってください。"},
+{korean:"얼마나 걸려요?",japanese:"どのくらいかかりますか？"},
+{korean:"미터기를 켜 주세요.",japanese:"メーターをつけてください。"},
+{korean:"여기서 세워 주세요.",japanese:"ここで止めてください。"},
+{korean:"트렁크 좀 열어 주세요.",japanese:"トランクを開けてください。"},
+{korean:"직진해 주세요.",japanese:"まっすぐ行ってください。"},
+{korean:"좌회전해 주세요.",japanese:"左折してください。"},
+{korean:"우회전해 주세요.",japanese:"右折してください。"},
+{korean:"유턴해 주세요.",japanese:"Uターンしてください。"},
+{korean:"급해요!",japanese:"急いでます！"},
+{korean:"천천히 가 주세요.",japanese:"ゆっくり行ってください。"},
+{korean:"기차표를 사고 싶어요.",japanese:"電車のチケットを買いたいです。"},
+{korean:"KTX 표 있어요?",japanese:"KTXのチケットありますか？"},
+{korean:"서울역까지 가 주세요.",japanese:"ソウル駅まで行ってください。"},
+{korean:"부산까지 얼마예요?",japanese:"釜山までいくらですか？"},
+{korean:"첫차는 몇 시예요?",japanese:"始発は何時ですか？"},
+{korean:"막차는 몇 시예요?",japanese:"終電は何時ですか？"},
+{korean:"자전거를 빌리고 싶어요.",japanese:"自転車を借りたいです。"},
+{korean:"렌터카를 빌리고 싶어요.",japanese:"レンタカーを借りたいです。"},
+{korean:"주차장이 어디예요?",japanese:"駐車場はどこですか？"},
+// 道を聞く
+{korean:"여기가 어디예요?",japanese:"ここはどこですか？"},
+{korean:"길을 잃어버렸어요.",japanese:"道に迷いました。"},
+{korean:"지도 좀 보여 주세요.",japanese:"地図を見せてください。"},
+{korean:"여기서 가까워요?",japanese:"ここから近いですか？"},
+{korean:"걸어서 갈 수 있어요?",japanese:"歩いて行けますか？"},
+{korean:"걸어서 몇 분 걸려요?",japanese:"歩いて何分かかりますか？"},
+{korean:"이쪽으로 가면 돼요?",japanese:"こっちに行けばいいですか？"},
+{korean:"똑바로 가세요.",japanese:"まっすぐ行ってください。"},
+{korean:"오른쪽으로 가세요.",japanese:"右に行ってください。"},
+{korean:"왼쪽으로 가세요.",japanese:"左に行ってください。"},
+{korean:"건너편에 있어요.",japanese:"向かい側にあります。"},
+{korean:"저기 보이는 건물이에요.",japanese:"あそこに見える建物です。"},
+{korean:"이 근처에 ATM이 있어요?",japanese:"この近くにATMはありますか？"},
+{korean:"가장 가까운 역이 어디예요?",japanese:"一番近い駅はどこですか？"},
+{korean:"명동까지 어떻게 가요?",japanese:"明洞まではどう行きますか？"},
+{korean:"구글 맵으로 찾아볼게요.",japanese:"Googleマップで調べます。"},
+// 観光
+{korean:"관광 안내소가 어디예요?",japanese:"観光案内所はどこですか？"},
+{korean:"지도 있어요?",japanese:"地図ありますか？"},
+{korean:"입장료가 얼마예요?",japanese:"入場料はいくらですか？"},
+{korean:"학생 할인 있어요?",japanese:"学生割引ありますか？"},
+{korean:"사진 찍어도 돼요?",japanese:"写真を撮ってもいいですか？"},
+{korean:"사진 좀 찍어 주세요.",japanese:"写真を撮ってください。"},
+{korean:"같이 사진 찍어도 돼요?",japanese:"一緒に写真撮ってもいいですか？"},
+{korean:"여기 유명해요?",japanese:"ここは有名ですか？"},
+{korean:"몇 시에 문을 닫아요?",japanese:"何時に閉まりますか？"},
+{korean:"오늘 휴관이에요?",japanese:"今日は休館ですか？"},
+{korean:"가이드 투어가 있어요?",japanese:"ガイドツアーはありますか？"},
+{korean:"일본어 가이드가 있어요?",japanese:"日本語ガイドはいますか？"},
+{korean:"오디오 가이드를 빌리고 싶어요.",japanese:"オーディオガイドを借りたいです。"},
+{korean:"여기서 제일 인기 있는 곳이 어디예요?",japanese:"ここで一番人気の場所はどこですか？"},
+{korean:"경복궁에 가고 싶어요.",japanese:"景福宮に行きたいです。"},
+{korean:"한복을 입어 보고 싶어요.",japanese:"韓服を着てみたいです。"},
+{korean:"한복 체험을 할 수 있어요?",japanese:"韓服体験ができますか？"},
+{korean:"야경이 예쁜 곳이 어디예요?",japanese:"夜景がきれいな場所はどこですか？"},
+{korean:"한강 공원에 가고 싶어요.",japanese:"漢江公園に行きたいです。"},
+{korean:"남산타워에 어떻게 가요?",japanese:"南山タワーにはどう行きますか？"},
+{korean:"이태원에 가고 싶어요.",japanese:"梨泰院に行きたいです。"},
+{korean:"홍대 입구역에서 내리면 돼요?",japanese:"弘大入口駅で降りればいいですか？"},
+{korean:"시장 구경하고 싶어요.",japanese:"市場を見物したいです。"},
+// 体調・緊急
+{korean:"아파요.",japanese:"痛いです。"},
+{korean:"병원에 가고 싶어요.",japanese:"病院に行きたいです。"},
+{korean:"약국이 어디예요?",japanese:"薬局はどこですか？"},
+{korean:"두통약 있어요?",japanese:"頭痛薬ありますか？"},
+{korean:"감기약 주세요.",japanese:"風邪薬をください。"},
+{korean:"소화제 주세요.",japanese:"消化剤をください。"},
+{korean:"밴드 있어요?",japanese:"絆創膏ありますか？"},
+{korean:"열이 나요.",japanese:"熱があります。"},
+{korean:"기침이 나요.",japanese:"咳が出ます。"},
+{korean:"콧물이 나요.",japanese:"鼻水が出ます。"},
+{korean:"배가 아파요.",japanese:"お腹が痛いです。"},
+{korean:"머리가 아파요.",japanese:"頭が痛いです。"},
+{korean:"다쳤어요.",japanese:"けがをしました。"},
+{korean:"도와주세요!",japanese:"助けてください！"},
+{korean:"경찰을 불러 주세요.",japanese:"警察を呼んでください。"},
+{korean:"구급차를 불러 주세요.",japanese:"救急車を呼んでください。"},
+{korean:"여권을 잃어버렸어요.",japanese:"パスポートをなくしました。"},
+{korean:"지갑을 도둑맞았어요.",japanese:"財布を盗まれました。"},
+{korean:"대사관이 어디예요?",japanese:"大使館はどこですか？"},
+{korean:"일본 대사관에 연락하고 싶어요.",japanese:"日本大使館に連絡したいです。"},
+{korean:"보험이 있어요.",japanese:"保険があります。"},
+{korean:"알레르기가 있어요.",japanese:"アレルギーがあります。"},
+{korean:"약을 먹고 있어요.",japanese:"薬を飲んでいます。"},
+{korean:"임신 중이에요.",japanese:"妊娠中です。"},
+// コミュニケーション
+{korean:"한국어를 조금 할 수 있어요.",japanese:"韓国語が少しできます。"},
+{korean:"한국어를 잘 못해요.",japanese:"韓国語があまりできません。"},
+{korean:"일본 사람이에요.",japanese:"日本人です。"},
+{korean:"일본에서 왔어요.",japanese:"日本から来ました。"},
+{korean:"천천히 말해 주세요.",japanese:"ゆっくり話してください。"},
+{korean:"다시 한번 말해 주세요.",japanese:"もう一度言ってください。"},
+{korean:"뭐라고요?",japanese:"何ですか？"},
+{korean:"무슨 뜻이에요?",japanese:"どういう意味ですか？"},
+{korean:"이거 한국어로 뭐예요?",japanese:"これは韓国語で何ですか？"},
+{korean:"영어 할 수 있어요?",japanese:"英語できますか？"},
+{korean:"번역 앱을 사용해도 돼요?",japanese:"翻訳アプリを使ってもいいですか？"},
+{korean:"적어 주세요.",japanese:"書いてください。"},
+{korean:"이름이 뭐예요?",japanese:"名前は何ですか？"},
+{korean:"어디에서 왔어요?",japanese:"どこから来ましたか？"},
+{korean:"한국은 처음이에요.",japanese:"韓国は初めてです。"},
+{korean:"한국이 좋아요.",japanese:"韓国が好きです。"},
+{korean:"한국 음식이 맛있어요.",japanese:"韓国料理がおいしいです。"},
+{korean:"또 오고 싶어요.",japanese:"また来たいです。"},
+{korean:"즐거웠어요.",japanese:"楽しかったです。"},
+{korean:"좋은 하루 보내세요.",japanese:"良い一日を過ごしてください。"},
+{korean:"연락처를 알려 주세요.",japanese:"連絡先を教えてください。"},
+{korean:"사진 보내 줄게요.",japanese:"写真を送りますね。"},
+{korean:"SNS 해요?",japanese:"SNSやっていますか？"},
+{korean:"인스타그램 있어요?",japanese:"インスタグラムありますか？"},
+{korean:"카카오톡 아이디가 뭐예요?",japanese:"カカオトークのIDは何ですか？"},
+// お金・両替
+{korean:"환전하고 싶어요.",japanese:"両替したいです。"},
+{korean:"환율이 얼마예요?",japanese:"為替レートはいくらですか？"},
+{korean:"엔을 원으로 바꾸고 싶어요.",japanese:"円をウォンに替えたいです。"},
+{korean:"ATM이 어디에 있어요?",japanese:"ATMはどこにありますか？"},
+{korean:"현금을 인출하고 싶어요.",japanese:"現金を引き出したいです。"},
+{korean:"거스름돈이 틀려요.",japanese:"おつりが間違っています。"},
+{korean:"거스름돈을 주세요.",japanese:"おつりをください。"},
+{korean:"잔돈 있어요?",japanese:"小銭ありますか？"},
+{korean:"만 원짜리로 바꿔 주세요.",japanese:"1万ウォン札に替えてください。"},
+{korean:"이체로 할게요.",japanese:"振込でお願いします。"},
+// 美容・エステ
+{korean:"헤어 살롱이 있어요?",japanese:"ヘアサロンはありますか？"},
+{korean:"머리를 자르고 싶어요.",japanese:"髪を切りたいです。"},
+{korean:"조금만 잘라 주세요.",japanese:"少しだけ切ってください。"},
+{korean:"파마하고 싶어요.",japanese:"パーマをかけたいです。"},
+{korean:"염색하고 싶어요.",japanese:"染めたいです。"},
+{korean:"네일 아트를 하고 싶어요.",japanese:"ネイルアートをしたいです。"},
+{korean:"마사지를 받고 싶어요.",japanese:"マッサージを受けたいです。"},
+{korean:"피부 관리를 받고 싶어요.",japanese:"フェイシャルエステを受けたいです。"},
+{korean:"찜질방에 가고 싶어요.",japanese:"チムジルバンに行きたいです。"},
+{korean:"사우나가 있어요?",japanese:"サウナはありますか？"},
+// カフェ・スイーツ
+{korean:"아메리카노 한 잔 주세요.",japanese:"アメリカーノ1杯ください。"},
+{korean:"카페라떼 주세요.",japanese:"カフェラテをください。"},
+{korean:"아이스로 주세요.",japanese:"アイスでお願いします。"},
+{korean:"핫으로 주세요.",japanese:"ホットでお願いします。"},
+{korean:"사이즈 업 할게요.",japanese:"サイズアップします。"},
+{korean:"시럽 빼 주세요.",japanese:"シロップ抜きでお願いします。"},
+{korean:"설탕 넣지 마세요.",japanese:"砂糖を入れないでください。"},
+{korean:"테이크아웃이요.",japanese:"テイクアウトです。"},
+{korean:"여기서 마실게요.",japanese:"ここで飲みます。"},
+{korean:"콘센트 있는 자리 있어요?",japanese:"コンセントのある席ありますか？"},
+{korean:"빙수를 먹고 싶어요.",japanese:"かき氷を食べたいです。"},
+{korean:"떡볶이를 먹어 보고 싶어요.",japanese:"トッポッキを食べてみたいです。"},
+{korean:"호떡 하나 주세요.",japanese:"ホットク1つください。"},
+{korean:"붕어빵 주세요.",japanese:"たい焼きをください。"},
+{korean:"치킨 배달돼요?",japanese:"チキンのデリバリーできますか？"},
+// 韓国文化体験
+{korean:"한국 요리를 배우고 싶어요.",japanese:"韓国料理を習いたいです。"},
+{korean:"김치를 만들어 보고 싶어요.",japanese:"キムチを作ってみたいです。"},
+{korean:"태권도를 배우고 싶어요.",japanese:"テコンドーを習いたいです。"},
+{korean:"K-pop 콘서트에 가고 싶어요.",japanese:"K-POPコンサートに行きたいです。"},
+{korean:"뮤지컬을 보고 싶어요.",japanese:"ミュージカルを見たいです。"},
+{korean:"노래방에 갈래요?",japanese:"カラオケに行きませんか？"},
+{korean:"찜닭을 먹어 볼래요?",japanese:"チムタクを食べてみませんか？"},
+{korean:"삼겹살을 먹으러 갈래요?",japanese:"サムギョプサルを食べに行きませんか？"},
+{korean:"치맥 할래요?",japanese:"チメク（チキン＋ビール）しませんか？"},
+{korean:"한강에서 치킨 먹을래요?",japanese:"漢江でチキン食べませんか？"},
+{korean:"전통차를 마셔 보고 싶어요.",japanese:"伝統茶を飲んでみたいです。"},
+{korean:"사찰 음식을 먹어 보고 싶어요.",japanese:"精進料理を食べてみたいです。"},
+{korean:"한옥 마을에 가 보고 싶어요.",japanese:"韓屋村に行ってみたいです。"},
+{korean:"제주도에 가고 싶어요.",japanese:"済州島に行きたいです。"},
+{korean:"부산에 가 볼까요?",japanese:"釜山に行ってみましょうか？"},
+// 天気・季節
+{korean:"오늘 날씨가 어때요?",japanese:"今日の天気はどうですか？"},
+{korean:"내일 비가 올까요?",japanese:"明日雨が降りますか？"},
+{korean:"오늘 너무 더워요.",japanese:"今日はとても暑いです。"},
+{korean:"오늘 너무 추워요.",japanese:"今日はとても寒いです。"},
+{korean:"우산을 가져가세요.",japanese:"傘を持っていってください。"},
+{korean:"미세먼지가 심해요.",japanese:"PM2.5がひどいです。"},
+{korean:"마스크를 쓰세요.",japanese:"マスクをしてください。"},
+{korean:"벚꽃이 펴요.",japanese:"桜が咲いています。"},
+{korean:"단풍이 예뻐요.",japanese:"紅葉がきれいです。"},
+{korean:"눈이 많이 와요.",japanese:"雪がたくさん降っています。"},
+// 時間・日程
+{korean:"지금 몇 시예요?",japanese:"今何時ですか？"},
+{korean:"약속 시간에 늦었어요.",japanese:"約束の時間に遅れました。"},
+{korean:"언제 시간 있어요?",japanese:"いつ時間ありますか？"},
+{korean:"내일 만날 수 있어요?",japanese:"明日会えますか？"},
+{korean:"몇 시에 만날까요?",japanese:"何時に会いましょうか？"},
+{korean:"오후 2시에 만나요.",japanese:"午後2時に会いましょう。"},
+{korean:"30분 후에 갈게요.",japanese:"30分後に行きます。"},
+{korean:"조금 늦을 것 같아요.",japanese:"少し遅れそうです。"},
+{korean:"먼저 가세요.",japanese:"先に行ってください。"},
+{korean:"기다려 주세요.",japanese:"待ってください。"},
+{korean:"몇 시에 끝나요?",japanese:"何時に終わりますか？"},
+{korean:"월요일부터 금요일까지예요.",japanese:"月曜日から金曜日までです。"},
+{korean:"주말에 뭐 할 거예요?",japanese:"週末に何をする予定ですか？"},
+{korean:"다음 주에 다시 올게요.",japanese:"来週また来ます。"},
+// 宿泊追加
+{korean:"게스트하우스를 찾고 있어요.",japanese:"ゲストハウスを探しています。"},
+{korean:"민박이 있어요?",japanese:"民泊はありますか？"},
+{korean:"하루에 얼마예요?",japanese:"1日いくらですか？"},
+{korean:"인터넷이 돼요?",japanese:"インターネットは使えますか？"},
+{korean:"조식은 몇 시부터예요?",japanese:"朝食は何時からですか？"},
+{korean:"수영장이 있어요?",japanese:"プールはありますか？"},
+{korean:"헬스장이 있어요?",japanese:"ジムはありますか？"},
+{korean:"주차할 수 있어요?",japanese:"駐車できますか？"},
+// 感情表現
+{korean:"너무 좋아요!",japanese:"とてもいいです！"},
+{korean:"최고예요!",japanese:"最高です！"},
+{korean:"대박!",japanese:"すごい！"},
+{korean:"진짜요?",japanese:"本当ですか？"},
+{korean:"믿을 수 없어요.",japanese:"信じられません。"},
+{korean:"감동받았어요.",japanese:"感動しました。"},
+{korean:"무서워요.",japanese:"怖いです。"},
+{korean:"걱정돼요.",japanese:"心配です。"},
+{korean:"실망했어요.",japanese:"がっかりしました。"},
+{korean:"화가 나요.",japanese:"怒っています。"},
+{korean:"기대돼요!",japanese:"楽しみです！"},
+{korean:"행복해요.",japanese:"幸せです。"},
+{korean:"보고 싶어요.",japanese:"会いたいです。"},
+{korean:"고마워요.",japanese:"ありがとう。"},
+{korean:"미안해요.",japanese:"ごめんなさい。"},
+// 日常会話
+{korean:"뭐 하고 있어요?",japanese:"何をしていますか？"},
+{korean:"어디에 가요?",japanese:"どこに行きますか？"},
+{korean:"밥 먹었어요?",japanese:"ご飯食べましたか？"},
+{korean:"같이 밥 먹을래요?",japanese:"一緒にご飯食べませんか？"},
+{korean:"오늘 바빠요?",japanese:"今日忙しいですか？"},
+{korean:"시간이 있으면 같이 가요.",japanese:"時間があったら一緒に行きましょう。"},
+{korean:"주말에 뭐 했어요?",japanese:"週末何をしましたか？"},
+{korean:"어제 뭐 했어요?",japanese:"昨日何をしましたか？"},
+{korean:"취미가 뭐예요?",japanese:"趣味は何ですか？"},
+{korean:"음악을 좋아해요.",japanese:"音楽が好きです。"},
+{korean:"여행을 좋아해요.",japanese:"旅行が好きです。"},
+{korean:"한국 드라마를 좋아해요.",japanese:"韓国ドラマが好きです。"},
+{korean:"무슨 음식을 좋아해요?",japanese:"何の食べ物が好きですか？"},
+{korean:"한국 음식을 좋아해요.",japanese:"韓国料理が好きです。"},
+{korean:"언제 한국에 왔어요?",japanese:"いつ韓国に来ましたか？"},
+{korean:"얼마나 있을 거예요?",japanese:"どのくらいいる予定ですか？"},
+{korean:"일주일 정도요.",japanese:"1週間くらいです。"},
+{korean:"다음에 또 만나요.",japanese:"次にまた会いましょう。"},
+{korean:"연락할게요.",japanese:"連絡しますね。"},
+{korean:"조심히 가세요.",japanese:"気をつけて行ってください。"},
+// 電話・通信
+{korean:"전화번호가 뭐예요?",japanese:"電話番号は何ですか？"},
+{korean:"한국 전화번호가 있어요?",japanese:"韓国の電話番号ありますか？"},
+{korean:"SIM 카드를 사고 싶어요.",japanese:"SIMカードを買いたいです。"},
+{korean:"포켓 와이파이를 빌리고 싶어요.",japanese:"ポケットWi-Fiを借りたいです。"},
+{korean:"충전기 좀 빌려 주세요.",japanese:"充電器を貸してください。"},
+{korean:"와이파이가 안 돼요.",japanese:"Wi-Fiが使えません。"},
+{korean:"인터넷이 느려요.",japanese:"インターネットが遅いです。"},
+{korean:"전화 좀 빌려도 돼요?",japanese:"電話を借りてもいいですか？"},
+// ショッピング追加
+{korean:"화장품을 사고 싶어요.",japanese:"化粧品を買いたいです。"},
+{korean:"이거 인기 상품이에요?",japanese:"これは人気商品ですか？"},
+{korean:"샘플 있어요?",japanese:"サンプルありますか？"},
+{korean:"세일 중이에요?",japanese:"セール中ですか？"},
+{korean:"1+1이에요?",japanese:"1つ買うと1つ無料ですか？"},
+{korean:"면세 받을 수 있어요?",japanese:"免税を受けられますか？"},
+{korean:"배송해 줄 수 있어요?",japanese:"配送してもらえますか？"},
+{korean:"일본으로 보낼 수 있어요?",japanese:"日本に送れますか？"},
+{korean:"선물로 좋은 거 추천해 주세요.",japanese:"プレゼントにいいもの推薦してください。"},
+{korean:"이거 유통기한이 언제예요?",japanese:"これの賞味期限はいつですか？"},
+// 韓国料理の注文
+{korean:"비빔밥 하나 주세요.",japanese:"ビビンバ1つください。"},
+{korean:"불고기 2인분 주세요.",japanese:"プルコギ2人前ください。"},
+{korean:"냉면 주세요.",japanese:"冷麺をください。"},
+{korean:"김밥 2줄 주세요.",japanese:"キンパ2本ください。"},
+{korean:"된장찌개 주세요.",japanese:"テンジャンチゲをください。"},
+{korean:"김치찌개 주세요.",japanese:"キムチチゲをください。"},
+{korean:"순두부찌개 주세요.",japanese:"スンドゥブチゲをください。"},
+{korean:"삼계탕 주세요.",japanese:"サムゲタンをください。"},
+{korean:"갈비탕 주세요.",japanese:"カルビタンをください。"},
+{korean:"해물파전 주세요.",japanese:"海鮮チヂミをください。"},
+{korean:"떡볶이 주세요.",japanese:"トッポッキをください。"},
+{korean:"순대 주세요.",japanese:"スンデをください。"},
+{korean:"족발 하나 주세요.",japanese:"チョッパル1つください。"},
+{korean:"보쌈 주세요.",japanese:"ポッサムをください。"},
+{korean:"치킨 한 마리 주세요.",japanese:"チキン1羽ください。"},
+{korean:"양념치킨으로 주세요.",japanese:"ヤンニョムチキンでお願いします。"},
+{korean:"후라이드치킨으로 주세요.",japanese:"フライドチキンでお願いします。"},
+{korean:"반반으로 주세요.",japanese:"半々でお願いします。"},
+{korean:"공기밥 하나 더 주세요.",japanese:"ご飯もう1つください。"},
+{korean:"리필 돼요?",japanese:"おかわりできますか？"},
+{korean:"상추 더 주세요.",japanese:"サンチュをもっとください。"},
+{korean:"쌈장 주세요.",japanese:"サムジャンをください。"},
+{korean:"고추장 주세요.",japanese:"コチュジャンをください。"},
+{korean:"간장 주세요.",japanese:"醤油をください。"},
+{korean:"식초 주세요.",japanese:"酢をください。"},
+// 丁寧な依頼
+{korean:"도와주실 수 있어요?",japanese:"手伝ってもらえますか？"},
+{korean:"부탁 하나 해도 돼요?",japanese:"お願いしてもいいですか？"},
+{korean:"잠깐만 기다려 주세요.",japanese:"少々お待ちください。"},
+{korean:"괜찮으시면 도와드릴게요.",japanese:"よろしければお手伝いします。"},
+{korean:"실례지만 길 좀 물어봐도 돼요?",japanese:"すみませんが道を聞いてもいいですか？"},
+{korean:"혹시 자리 있어요?",japanese:"もしかして席ありますか？"},
+{korean:"이거 써도 돼요?",japanese:"これ使ってもいいですか？"},
+{korean:"여기 앉아도 돼요?",japanese:"ここに座ってもいいですか？"},
+{korean:"문 좀 열어 주세요.",japanese:"ドアを開けてください。"},
+{korean:"에어컨 좀 올려 주세요.",japanese:"エアコンの温度を上げてください。"},
+{korean:"에어컨 좀 내려 주세요.",japanese:"エアコンの温度を下げてください。"},
+{korean:"음악 좀 줄여 주세요.",japanese:"音楽の音量を下げてください。"},
+// トラブル対応
+{korean:"분실물 센터가 어디예요?",japanese:"遺失物センターはどこですか？"},
+{korean:"가방을 버스에 놓고 내렸어요.",japanese:"かばんをバスに置いて降りてしまいました。"},
+{korean:"핸드폰을 잃어버렸어요.",japanese:"携帯電話をなくしました。"},
+{korean:"여기에 두고 간 것 같아요.",japanese:"ここに置いていったと思います。"},
+{korean:"경찰서가 어디예요?",japanese:"警察署はどこですか？"},
+{korean:"신고하고 싶어요.",japanese:"届け出をしたいです。"},
+{korean:"보험 청구서가 필요해요.",japanese:"保険請求書が必要です。"},
+{korean:"통역을 부탁할 수 있어요?",japanese:"通訳をお願いできますか？"},
+{korean:"일본어 통역이 필요해요.",japanese:"日本語の通訳が必要です。"},
+{korean:"신용카드를 분실했어요.",japanese:"クレジットカードをなくしました。"},
+// 交通追加
+{korean:"이 열차는 어디로 가요?",japanese:"この列車はどこに行きますか？"},
+{korean:"자유석이에요? 지정석이에요?",japanese:"自由席ですか？指定席ですか？"},
+{korean:"왕복이요.",japanese:"往復です。"},
+{korean:"편도요.",japanese:"片道です。"},
+{korean:"한 정거장 남았어요.",japanese:"あと1駅です。"},
+{korean:"이번 역이 어디예요?",japanese:"この駅はどこですか？"},
+{korean:"환승역이에요?",japanese:"乗り換え駅ですか？"},
+{korean:"급행이에요? 완행이에요?",japanese:"急行ですか？各駅停車ですか？"},
+{korean:"버스가 언제 와요?",japanese:"バスはいつ来ますか？"},
+{korean:"이 버스 자주 와요?",japanese:"このバスはよく来ますか？"},
+// 買い物追加
+{korean:"이거 새로 나온 거예요?",japanese:"これは新発売ですか？"},
+{korean:"베스트셀러가 뭐예요?",japanese:"ベストセラーは何ですか？"},
+{korean:"선물 세트 있어요?",japanese:"ギフトセットありますか？"},
+{korean:"이것과 저것 중에 뭐가 좋아요?",japanese:"これとあれの中でどちらがいいですか？"},
+{korean:"가격표가 안 보여요.",japanese:"値札が見えません。"},
+{korean:"할인 행사 중이에요?",japanese:"割引イベント中ですか？"},
+{korean:"멤버십 카드가 있어요?",japanese:"メンバーシップカードありますか？"},
+{korean:"포인트 적립 돼요?",japanese:"ポイント貯まりますか？"},
+// 食事追加
+{korean:"예약한 사람이에요.",japanese:"予約した者です。"},
+{korean:"웨이팅이 얼마나 돼요?",japanese:"待ち時間はどのくらいですか？"},
+{korean:"좌석이 다 찼어요?",japanese:"席は全部埋まっていますか？"},
+{korean:"개인 접시 주세요.",japanese:"取り皿をください。"},
+{korean:"물수건 주세요.",japanese:"おしぼりをください。"},
+{korean:"이거 리필 돼요?",japanese:"これおかわりできますか？"},
+{korean:"배달 앱 추천해 주세요.",japanese:"デリバリーアプリを推薦してください。"},
+{korean:"포장 가능해요?",japanese:"持ち帰りできますか？"},
+{korean:"잔을 좀 더 가져다 주세요.",japanese:"グラスをもう少し持ってきてください。"},
+{korean:"코스 요리 있어요?",japanese:"コース料理ありますか？"},
+// 観光追加
+{korean:"셀카 찍을래요?",japanese:"セルフィー撮りますか？"},
+{korean:"여기 포토존이에요.",japanese:"ここがフォトスポットです。"},
+{korean:"뷰가 정말 좋네요.",japanese:"景色が本当にいいですね。"},
+{korean:"일몰 시간이 언제예요?",japanese:"日の入りの時間はいつですか？"},
+{korean:"산책하러 가요.",japanese:"散歩に行きましょう。"},
+{korean:"배를 타고 싶어요.",japanese:"船に乗りたいです。"},
+{korean:"케이블카를 타고 싶어요.",japanese:"ケーブルカーに乗りたいです。"},
+{korean:"놀이공원에 가고 싶어요.",japanese:"遊園地に行きたいです。"},
+{korean:"수족관이 있어요?",japanese:"水族館はありますか？"},
+{korean:"박물관에 가고 싶어요.",japanese:"博物館に行きたいです。"},
+{korean:"미술관에 가고 싶어요.",japanese:"美術館に行きたいです。"},
+{korean:"공연을 보고 싶어요.",japanese:"公演を見たいです。"},
+{korean:"무료 입장이에요?",japanese:"無料入場ですか？"},
+{korean:"단체 할인 있어요?",japanese:"団体割引ありますか？"},
+{korean:"근처에 볼 곳이 있어요?",japanese:"近くに見どころはありますか？"},
+// 追加フレーズ
+{korean:"한국어 공부 중이에요.",japanese:"韓国語を勉強中です。"},
+{korean:"발음이 어려워요.",japanese:"発音が難しいです。"},
+{korean:"잘 모르겠어요.",japanese:"よくわかりません。"},
+{korean:"이해했어요.",japanese:"理解しました。"},
+{korean:"알겠습니다.",japanese:"わかりました。"},
+{korean:"한 번 더 해 주세요.",japanese:"もう一度やってください。"},
+{korean:"괜찮아요, 됐어요.",japanese:"大丈夫です、結構です。"},
+{korean:"생각해 볼게요.",japanese:"考えてみます。"},
+{korean:"잘 먹겠습니다.",japanese:"いただきます。"},
+{korean:"수고하셨습니다.",japanese:"お疲れ様でした。"},
+{korean:"어서 오세요.",japanese:"いらっしゃいませ。"},
+{korean:"또 오세요.",japanese:"また来てください。"},
+{korean:"좋은 여행 되세요.",japanese:"良い旅を。"},
+{korean:"즐거운 시간 보내세요.",japanese:"楽しい時間を過ごしてください。"},
+{korean:"행운을 빌어요.",japanese:"幸運を祈ります。"},
+{korean:"생일 축하해요.",japanese:"お誕生日おめでとう。"},
+{korean:"새해 복 많이 받으세요.",japanese:"明けましておめでとうございます。"},
+{korean:"추석 잘 보내세요.",japanese:"良い秋夕を過ごしてください。"},
+{korean:"몸조심하세요.",japanese:"体に気をつけてください。"},
+{korean:"건강하세요.",japanese:"お元気で。"},
+{korean:"오래간만이에요.",japanese:"お久しぶりです。"},
+{korean:"반갑습니다.",japanese:"お会いできて嬉しいです。"},
+{korean:"처음 뵙겠습니다.",japanese:"初めまして。"},
+{korean:"잘 부탁드립니다.",japanese:"よろしくお願いします。"},
+{korean:"별말씀을요.",japanese:"とんでもないです。"},
+{korean:"천만에요.",japanese:"どういたしまして。"},
+{korean:"아닙니다.",japanese:"いいえ（謙遜）。"},
+{korean:"그럼요.",japanese:"もちろんです。"},
+{korean:"맞아요.",japanese:"その通りです。"},
+{korean:"아마도요.",japanese:"たぶんです。"},
+{korean:"글쎄요.",japanese:"さあ、どうでしょう。"},
+{korean:"잠시만요.",japanese:"少々お待ちください。"},
+{korean:"실례합니다.",japanese:"失礼します。"},
+{korean:"죄송하지만...",japanese:"申し訳ありませんが..."},
+{korean:"혹시...",japanese:"もしかして..."},
+{korean:"그런데요...",japanese:"ところで..."},
+{korean:"그래서요.",japanese:"それで。"},
+{korean:"왜냐하면요.",japanese:"なぜかというと。"},
+{korean:"예를 들면요.",japanese:"例えば。"},
+{korean:"사실은요.",japanese:"実は。"},
+{korean:"정말 감사합니다.",japanese:"本当にありがとうございます。"},
+{korean:"신세 많이 졌습니다.",japanese:"大変お世話になりました。"},
+{korean:"덕분에 즐거웠어요.",japanese:"おかげで楽しかったです。"},
+{korean:"도움이 많이 됐어요.",japanese:"とても助かりました。"},
+{korean:"한국에 와서 좋았어요.",japanese:"韓国に来てよかったです。"},
+{korean:"잊지 못할 추억이에요.",japanese:"忘れられない思い出です。"},
+{korean:"꼭 다시 올게요.",japanese:"必ずまた来ます。"},
+{korean:"안녕히 계세요.",japanese:"さようなら（残る人へ）。"},
+{korean:"안녕히 가세요.",japanese:"さようなら（去る人へ）。"},
+{korean:"잘 가요.",japanese:"気をつけてね。"},
+{korean:"또 봐요.",japanese:"またね。"},
+{korean:"내일 봐요.",japanese:"また明日。"},
+{korean:"좋은 꿈 꾸세요.",japanese:"良い夢を。"},
+{korean:"잘 자요.",japanese:"おやすみなさい。"},
+{korean:"좋은 아침이에요.",japanese:"おはようございます。"},
+{korean:"점심 맛있게 드세요.",japanese:"おいしい昼食を。"},
+{korean:"퇴근 후에 뭐 할 거예요?",japanese:"退勤後何をする予定ですか？"},
+{korean:"이번 휴가는 어디로 가요?",japanese:"今度の休暇はどこに行きますか？"},
+{korean:"한국에 얼마나 있을 거예요?",japanese:"韓国にどのくらいいますか？"},
+{korean:"일본으로 돌아가요.",japanese:"日本に帰ります。"},
+{korean:"비행기 시간이 다 됐어요.",japanese:"飛行機の時間になりました。"},
+{korean:"공항까지 데려다 줄게요.",japanese:"空港まで送ります。"},
+{korean:"무사히 도착하면 연락해 주세요.",japanese:"無事に着いたら連絡してください。"},
+// 病院・薬局
+{korean:"병원에 가고 싶어요.",japanese:"病院に行きたいです。"},
+{korean:"약국은 어디에 있어요?",japanese:"薬局はどこにありますか？"},
+{korean:"감기약 주세요.",japanese:"風邪薬をください。"},
+{korean:"두통약 있어요?",japanese:"頭痛薬はありますか？"},
+{korean:"소화제 주세요.",japanese:"消化剤をください。"},
+{korean:"반창고 있어요?",japanese:"絆創膏はありますか？"},
+{korean:"진통제 주세요.",japanese:"鎮痛剤をください。"},
+{korean:"처방전이 필요해요?",japanese:"処方箋は必要ですか？"},
+{korean:"하루에 몇 번 먹어요?",japanese:"1日に何回飲みますか？"},
+{korean:"식후에 드세요.",japanese:"食後に飲んでください。"},
+{korean:"알레르기가 있어요.",japanese:"アレルギーがあります。"},
+{korean:"보험이 있어요.",japanese:"保険があります。"},
+{korean:"해열제 주세요.",japanese:"解熱剤をください。"},
+{korean:"기침이 멈추지 않아요.",japanese:"咳が止まりません。"},
+{korean:"콧물이 나요.",japanese:"鼻水が出ます。"},
+{korean:"목이 부었어요.",japanese:"喉が腫れました。"},
+{korean:"눈이 가려워요.",japanese:"目がかゆいです。"},
+{korean:"귀가 아파요.",japanese:"耳が痛いです。"},
+{korean:"이가 아파요.",japanese:"歯が痛いです。"},
+{korean:"치과에 가고 싶어요.",japanese:"歯科に行きたいです。"},
+{korean:"벌에 쏘였어요.",japanese:"蜂に刺されました。"},
+{korean:"넘어져서 다쳤어요.",japanese:"転んで怪我しました。"},
+{korean:"발목을 삐었어요.",japanese:"足首を捻挫しました。"},
+{korean:"혈압이 높아요.",japanese:"血圧が高いです。"},
+{korean:"당뇨가 있어요.",japanese:"糖尿病があります。"},
+// 銀行・郵便局
+{korean:"은행은 몇 시에 열어요?",japanese:"銀行は何時に開きますか？"},
+{korean:"환전하고 싶어요.",japanese:"両替したいです。"},
+{korean:"오늘 환율이 어떻게 돼요?",japanese:"今日の為替レートはいくらですか？"},
+{korean:"엔화를 원화로 바꿔 주세요.",japanese:"円をウォンに替えてください。"},
+{korean:"수수료가 얼마예요?",japanese:"手数料はいくらですか？"},
+{korean:"잔돈으로 바꿔 주세요.",japanese:"小銭に替えてください。"},
+{korean:"우체국은 어디에 있어요?",japanese:"郵便局はどこにありますか？"},
+{korean:"일본에 편지를 보내고 싶어요.",japanese:"日本に手紙を送りたいです。"},
+{korean:"항공편으로 보내 주세요.",japanese:"航空便で送ってください。"},
+{korean:"소포를 보내고 싶어요.",japanese:"小包を送りたいです。"},
+{korean:"우표를 사고 싶어요.",japanese:"切手を買いたいです。"},
+{korean:"며칠 걸려요?",japanese:"何日かかりますか？"},
+{korean:"국제 택배를 보내고 싶어요.",japanese:"国際宅配便を送りたいです。"},
+{korean:"ATM이 어디에 있어요?",japanese:"ATMはどこにありますか？"},
+{korean:"현금을 인출하고 싶어요.",japanese:"現金を引き出したいです。"},
+// 電話・通信
+{korean:"와이파이 비밀번호가 뭐예요?",japanese:"Wi-Fiのパスワードは何ですか？"},
+{korean:"인터넷이 안 돼요.",japanese:"インターネットが使えません。"},
+{korean:"SIM 카드를 사고 싶어요.",japanese:"SIMカードを買いたいです。"},
+{korean:"충전기를 빌릴 수 있어요?",japanese:"充電器を借りられますか？"},
+{korean:"콘센트가 어디에 있어요?",japanese:"コンセントはどこにありますか？"},
+{korean:"전화를 빌릴 수 있어요?",japanese:"電話を借りられますか？"},
+{korean:"데이터가 다 떨어졌어요.",japanese:"データ通信量がなくなりました。"},
+{korean:"로밍 서비스를 쓰고 있어요.",japanese:"ローミングサービスを使っています。"},
+{korean:"포켓 와이파이를 빌리고 싶어요.",japanese:"ポケットWi-Fiを借りたいです。"},
+{korean:"여기 와이파이 돼요?",japanese:"ここWi-Fi使えますか？"},
+// 写真撮影
+{korean:"사진 찍어 주세요.",japanese:"写真を撮ってください。"},
+{korean:"같이 사진 찍어도 돼요?",japanese:"一緒に写真撮ってもいいですか？"},
+{korean:"여기서 사진 찍어도 돼요?",japanese:"ここで写真を撮ってもいいですか？"},
+{korean:"셀카를 찍자!",japanese:"セルフィーを撮ろう！"},
+{korean:"한 장 더 찍어 주세요.",japanese:"もう1枚撮ってください。"},
+{korean:"플래시를 켜 주세요.",japanese:"フラッシュをつけてください。"},
+{korean:"사진 촬영 금지예요.",japanese:"写真撮影禁止です。"},
+{korean:"이 사진 잘 나왔어요.",japanese:"この写真よく撮れました。"},
+{korean:"사진 보내 주세요.",japanese:"写真を送ってください。"},
+// 季節・天気（追加）
+{korean:"오늘은 덥고 습해요.",japanese:"今日は暑くて湿度が高いです。"},
+{korean:"바람이 많이 불어요.",japanese:"風が強いです。"},
+{korean:"눈이 많이 왔어요.",japanese:"雪がたくさん降りました。"},
+{korean:"날씨가 풀렸어요.",japanese:"暖かくなりました。"},
+{korean:"꽃이 피었어요.",japanese:"花が咲きました。"},
+{korean:"단풍이 예뻐요.",japanese:"紅葉がきれいです。"},
+{korean:"장마철이에요.",japanese:"梅雨の季節です。"},
+{korean:"미세먼지가 심해요.",japanese:"PM2.5がひどいです。"},
+{korean:"자외선이 강해요.",japanese:"紫外線が強いです。"},
+{korean:"선크림을 바르세요.",japanese:"日焼け止めを塗ってください。"},
+{korean:"에어컨을 틀어 주세요.",japanese:"エアコンをつけてください。"},
+{korean:"히터를 켜 주세요.",japanese:"ヒーターをつけてください。"},
+{korean:"창문 좀 열어 주세요.",japanese:"窓を少し開けてください。"},
+// スーパー・コンビニ
+{korean:"편의점이 어디에 있어요?",japanese:"コンビニはどこにありますか？"},
+{korean:"마트는 몇 시까지 해요?",japanese:"スーパーは何時までやっていますか？"},
+{korean:"봉투 필요해요.",japanese:"袋が必要です。"},
+{korean:"봉투 괜찮아요.",japanese:"袋は大丈夫です。"},
+{korean:"전자레인지 써도 돼요?",japanese:"電子レンジを使ってもいいですか？"},
+{korean:"뜨거운 물 있어요?",japanese:"お湯はありますか？"},
+{korean:"도시락 데워 주세요.",japanese:"お弁当を温めてください。"},
+{korean:"젓가락 주세요.",japanese:"お箸をください。"},
+{korean:"빨대 주세요.",japanese:"ストローをください。"},
+{korean:"이거 유통기한이 언제예요?",japanese:"これの賞味期限はいつですか？"},
+{korean:"1+1 행사예요.",japanese:"1つ買うと1つ無料です。"},
+{korean:"이거 할인 중이에요?",japanese:"これ割引中ですか？"},
+{korean:"장바구니 있어요?",japanese:"買い物カゴはありますか？"},
+{korean:"계산대가 어디예요?",japanese:"レジはどこですか？"},
+{korean:"포인트 카드 있으세요?",japanese:"ポイントカードはありますか？"},
+// 宿泊（追加）
+{korean:"금연 방으로 주세요.",japanese:"禁煙の部屋にしてください。"},
+{korean:"바다가 보이는 방이 있어요?",japanese:"海が見える部屋はありますか？"},
+{korean:"조용한 방으로 부탁해요.",japanese:"静かな部屋をお願いします。"},
+{korean:"방이 너무 추워요.",japanese:"部屋が寒すぎます。"},
+{korean:"방이 너무 더워요.",japanese:"部屋が暑すぎます。"},
+{korean:"온수가 안 나와요.",japanese:"お湯が出ません。"},
+{korean:"TV가 안 나와요.",japanese:"テレビが映りません。"},
+{korean:"옆 방이 시끄러워요.",japanese:"隣の部屋がうるさいです。"},
+{korean:"세탁 서비스 있어요?",japanese:"ランドリーサービスはありますか？"},
+{korean:"다림질할 수 있어요?",japanese:"アイロンはかけられますか？"},
+{korean:"드라이기 있어요?",japanese:"ドライヤーはありますか？"},
+{korean:"객실 청소 부탁해요.",japanese:"客室の掃除をお願いします。"},
+{korean:"귀중품을 맡기고 싶어요.",japanese:"貴重品を預けたいです。"},
+{korean:"늦게 체크아웃할 수 있어요?",japanese:"遅くチェックアウトできますか？"},
+{korean:"숙박비에 아침이 포함돼 있어요?",japanese:"宿泊費に朝食は含まれていますか？"},
+{korean:"연박 할인 있어요?",japanese:"連泊割引はありますか？"},
+{korean:"게스트하우스를 찾고 있어요.",japanese:"ゲストハウスを探しています。"},
+{korean:"한옥 스테이를 해 보고 싶어요.",japanese:"韓屋ステイを体験してみたいです。"},
+// 食べ物・飲み物（追加）
+{korean:"이거 맵지 않게 해 주세요.",japanese:"これ辛くなくしてください。"},
+{korean:"이거 좀 싱거워요.",japanese:"これ少し味が薄いです。"},
+{korean:"간이 딱 좋아요.",japanese:"味付けがちょうどいいです。"},
+{korean:"이거 무슨 맛이에요?",japanese:"これ何味ですか？"},
+{korean:"한국 음식이 입에 맞아요.",japanese:"韓国料理が口に合います。"},
+{korean:"이거 중독성 있어요.",japanese:"これ中毒性があります。"},
+{korean:"배달 돼요?",japanese:"出前できますか？"},
+{korean:"배달 앱으로 시켰어요.",japanese:"出前アプリで注文しました。"},
+{korean:"포장 돼요?",japanese:"テイクアウトできますか？"},
+{korean:"여기서 먹을게요.",japanese:"ここで食べます。"},
+{korean:"가져갈게요.",japanese:"持ち帰ります。"},
+{korean:"반찬 더 주세요.",japanese:"おかずのおかわりください。"},
+{korean:"공기밥 하나 더 주세요.",japanese:"ご飯をもう1つください。"},
+{korean:"뚝배기가 뜨거우니까 조심하세요.",japanese:"土鍋が熱いので気をつけてください。"},
+{korean:"이거 전자레인지에 돌려도 돼요?",japanese:"これ電子レンジで温めてもいいですか？"},
+{korean:"젓가락 잘 못 써요.",japanese:"お箸がうまく使えません。"},
+{korean:"포크 있어요?",japanese:"フォークはありますか？"},
+{korean:"나이프 주세요.",japanese:"ナイフをください。"},
+{korean:"냅킨 좀 주세요.",japanese:"ナプキンをください。"},
+{korean:"물수건 있어요?",japanese:"おしぼりはありますか？"},
+{korean:"이 근처에 맛집 있어요?",japanese:"この近くにおいしい店はありますか？"},
+{korean:"웨이팅이 길어요?",japanese:"待ち時間は長いですか？"},
+{korean:"예약 안 하면 못 들어가요?",japanese:"予約しないと入れませんか？"},
+{korean:"런치 메뉴 있어요?",japanese:"ランチメニューはありますか？"},
+{korean:"세트 메뉴로 할게요.",japanese:"セットメニューにします。"},
+// 韓国文化体験（追加）
+{korean:"한복 체험을 하고 싶어요.",japanese:"韓服体験をしたいです。"},
+{korean:"한복을 빌릴 수 있어요?",japanese:"韓服を借りられますか？"},
+{korean:"사이즈가 안 맞아요.",japanese:"サイズが合いません。"},
+{korean:"전통 시장에 가고 싶어요.",japanese:"伝統市場に行きたいです。"},
+{korean:"남대문시장은 어떻게 가요?",japanese:"南大門市場にはどう行きますか？"},
+{korean:"동대문시장에서 옷을 사고 싶어요.",japanese:"東大門市場で服を買いたいです。"},
+{korean:"광장시장에서 빈대떡을 먹고 싶어요.",japanese:"広蔵市場でピンデトクを食べたいです。"},
+{korean:"K-pop 콘서트에 가고 싶어요.",japanese:"K-POPコンサートに行きたいです。"},
+{korean:"팬미팅 티켓을 사고 싶어요.",japanese:"ファンミーティングのチケットを買いたいです。"},
+{korean:"응원봉을 샀어요.",japanese:"ペンライトを買いました。"},
+{korean:"굿즈를 사고 싶어요.",japanese:"グッズを買いたいです。"},
+{korean:"노래방에 가자!",japanese:"カラオケに行こう！"},
+{korean:"찜질방에 가 본 적 있어요?",japanese:"チムジルバンに行ったことありますか？"},
+{korean:"찜질방에서 계란을 먹어요.",japanese:"チムジルバンで卵を食べます。"},
+{korean:"사우나에서 때를 밀고 싶어요.",japanese:"サウナでアカスリをしたいです。"},
+{korean:"한국 드라마 촬영지에 가고 싶어요.",japanese:"韓国ドラマのロケ地に行きたいです。"},
+{korean:"경복궁에 가고 싶어요.",japanese:"景福宮に行きたいです。"},
+{korean:"북촌 한옥마을이 예뻐요.",japanese:"北村韓屋村がきれいです。"},
+{korean:"인사동에서 기념품을 사고 싶어요.",japanese:"仁寺洞でお土産を買いたいです。"},
+{korean:"명동은 사람이 많아요.",japanese:"明洞は人が多いです。"},
+{korean:"한강에서 치킨을 먹고 싶어요.",japanese:"漢江でチキンを食べたいです。"},
+{korean:"한강 공원에서 자전거를 타고 싶어요.",japanese:"漢江公園で自転車に乗りたいです。"},
+{korean:"N서울타워에 가고 싶어요.",japanese:"Nソウルタワーに行きたいです。"},
+{korean:"롯데월드에 가고 싶어요.",japanese:"ロッテワールドに行きたいです。"},
+{korean:"에버랜드에 가고 싶어요.",japanese:"エバーランドに行きたいです。"},
+// 交通（追加）
+{korean:"교통카드를 충전하고 싶어요.",japanese:"交通カードをチャージしたいです。"},
+{korean:"이 버스 어디까지 가요?",japanese:"このバスはどこまで行きますか？"},
+{korean:"다음 정류장에서 내릴게요.",japanese:"次の停留所で降ります。"},
+{korean:"잘못 탔어요.",japanese:"乗り間違えました。"},
+{korean:"막차가 몇 시예요?",japanese:"終電は何時ですか？"},
+{korean:"첫차가 몇 시예요?",japanese:"始発は何時ですか？"},
+{korean:"배차 간격이 어떻게 돼요?",japanese:"運行間隔はどのくらいですか？"},
+{korean:"급행열차를 타야 해요?",japanese:"急行列車に乗るべきですか？"},
+{korean:"완행으로 가야 해요?",japanese:"各停で行くべきですか？"},
+{korean:"갈아타는 곳이 어디예요?",japanese:"乗り換え場所はどこですか？"},
+{korean:"출구가 몇 번이에요?",japanese:"出口は何番ですか？"},
+{korean:"에스컬레이터는 어디에 있어요?",japanese:"エスカレーターはどこにありますか？"},
+{korean:"엘리베이터는 어디에 있어요?",japanese:"エレベーターはどこにありますか？"},
+{korean:"이 길이 맞아요?",japanese:"この道で合っていますか？"},
+{korean:"여기서 걸어서 갈 수 있어요?",japanese:"ここから歩いて行けますか？"},
+{korean:"자전거를 빌리고 싶어요.",japanese:"自転車を借りたいです。"},
+{korean:"킥보드를 타도 돼요?",japanese:"キックボードに乗ってもいいですか？"},
+{korean:"주차장이 있어요?",japanese:"駐車場はありますか？"},
+{korean:"주차비가 얼마예요?",japanese:"駐車料金はいくらですか？"},
+{korean:"내비게이션을 켜 주세요.",japanese:"ナビをつけてください。"},
+{korean:"유턴해 주세요.",japanese:"Uターンしてください。"},
+{korean:"여기서 세워 주세요.",japanese:"ここで止めてください。"},
+{korean:"교통 체증이 심해요.",japanese:"交通渋滞がひどいです。"},
+{korean:"사거리에서 좌회전해 주세요.",japanese:"交差点で左折してください。"},
+{korean:"직진해 주세요.",japanese:"まっすぐ行ってください。"},
+// ショッピング（追加）
+{korean:"이거 신상이에요?",japanese:"これ新作ですか？"},
+{korean:"다른 디자인 있어요?",japanese:"他のデザインはありますか？"},
+{korean:"이거 인기 많아요?",japanese:"これ人気ありますか？"},
+{korean:"이거 베스트셀러예요?",japanese:"これベストセラーですか？"},
+{korean:"선물 포장해 주세요.",japanese:"プレゼント包装してください。"},
+{korean:"리본 달아 주세요.",japanese:"リボンをつけてください。"},
+{korean:"교환할 수 있어요?",japanese:"交換できますか？"},
+{korean:"환불 돼요?",japanese:"返金できますか？"},
+{korean:"영수증을 잃어버렸어요.",japanese:"レシートをなくしました。"},
+{korean:"이거 불량품이에요.",japanese:"これ不良品です。"},
+{korean:"세일은 언제까지예요?",japanese:"セールはいつまでですか？"},
+{korean:"면세로 살 수 있어요?",japanese:"免税で買えますか？"},
+{korean:"택스 프리 돼요?",japanese:"タックスフリーになりますか？"},
+{korean:"면세 한도가 얼마예요?",japanese:"免税の限度額はいくらですか？"},
+{korean:"이거 면세점보다 싸요?",japanese:"これ免税店より安いですか？"},
+{korean:"온라인에서 더 싸요?",japanese:"オンラインの方が安いですか？"},
+{korean:"이거 정품이에요?",japanese:"これ正規品ですか？"},
+{korean:"사이즈 교환해 주세요.",japanese:"サイズ交換してください。"},
+{korean:"피팅룸은 어디예요?",japanese:"試着室はどこですか？"},
+{korean:"이거 입어 봐도 돼요?",japanese:"これ着てみてもいいですか？"},
+{korean:"좀 큰 사이즈 있어요?",japanese:"少し大きいサイズはありますか？"},
+{korean:"좀 작은 사이즈 있어요?",japanese:"少し小さいサイズはありますか？"},
+{korean:"이거 마지막 하나예요?",japanese:"これ最後の1つですか？"},
+// 感情・リアクション（追加）
+{korean:"대박!",japanese:"すごい！"},
+{korean:"진짜요?",japanese:"本当ですか？"},
+{korean:"말도 안 돼!",japanese:"ありえない！"},
+{korean:"웃기다!",japanese:"面白い！"},
+{korean:"감동이에요.",japanese:"感動です。"},
+{korean:"부럽다!",japanese:"うらやましい！"},
+{korean:"무서워요.",japanese:"怖いです。"},
+{korean:"긴장돼요.",japanese:"緊張します。"},
+{korean:"설레요.",japanese:"ときめきます。"},
+{korean:"아쉬워요.",japanese:"残念です。"},
+{korean:"그리워요.",japanese:"恋しいです。"},
+{korean:"심심해요.",japanese:"退屈です。"},
+{korean:"짜증나요.",japanese:"イライラします。"},
+{korean:"답답해요.",japanese:"もどかしいです。"},
+{korean:"속상해요.",japanese:"悔しいです。"},
+{korean:"기분이 좋아요.",japanese:"気分がいいです。"},
+{korean:"기분이 안 좋아요.",japanese:"気分が悪いです。"},
+{korean:"걱정돼요.",japanese:"心配です。"},
+{korean:"안심했어요.",japanese:"安心しました。"},
+{korean:"놀랐어요!",japanese:"びっくりしました！"},
+{korean:"어이가 없어요.",japanese:"呆れました。"},
+{korean:"창피해요.",japanese:"恥ずかしいです。"},
+{korean:"뿌듯해요.",japanese:"誇らしいです。"},
+{korean:"후회해요.",japanese:"後悔しています。"},
+// 趣味・娯楽
+{korean:"취미가 뭐예요?",japanese:"趣味は何ですか？"},
+{korean:"운동을 좋아해요.",japanese:"運動が好きです。"},
+{korean:"영화를 좋아해요.",japanese:"映画が好きです。"},
+{korean:"독서를 좋아해요.",japanese:"読書が好きです。"},
+{korean:"요리를 좋아해요.",japanese:"料理が好きです。"},
+{korean:"음악을 듣는 걸 좋아해요.",japanese:"音楽を聴くのが好きです。"},
+{korean:"사진 찍는 걸 좋아해요.",japanese:"写真を撮るのが好きです。"},
+{korean:"등산을 좋아해요.",japanese:"登山が好きです。"},
+{korean:"수영을 좋아해요.",japanese:"水泳が好きです。"},
+{korean:"요가를 해요.",japanese:"ヨガをしています。"},
+{korean:"게임을 좋아해요.",japanese:"ゲームが好きです。"},
+{korean:"그림을 그려요.",japanese:"絵を描きます。"},
+{korean:"피아노를 쳐요.",japanese:"ピアノを弾きます。"},
+{korean:"기타를 쳐요.",japanese:"ギターを弾きます。"},
+{korean:"노래를 좋아해요.",japanese:"歌が好きです。"},
+// 自己紹介・会話
+{korean:"이름이 뭐예요?",japanese:"名前は何ですか？"},
+{korean:"어디에서 왔어요?",japanese:"どこから来ましたか？"},
+{korean:"일본에서 왔어요.",japanese:"日本から来ました。"},
+{korean:"한국어를 공부하고 있어요.",japanese:"韓国語を勉強しています。"},
+{korean:"한국어를 잘 못해요.",japanese:"韓国語があまりできません。"},
+{korean:"한국어를 조금 할 수 있어요.",japanese:"韓国語が少しできます。"},
+{korean:"천천히 말해 주세요.",japanese:"ゆっくり話してください。"},
+{korean:"다시 말해 주세요.",japanese:"もう一度言ってください。"},
+{korean:"무슨 뜻이에요?",japanese:"どういう意味ですか？"},
+{korean:"한국어로 뭐라고 해요?",japanese:"韓国語で何と言いますか？"},
+{korean:"일본어로 뭐라고 해요?",japanese:"日本語で何と言いますか？"},
+{korean:"적어 주세요.",japanese:"書いてください。"},
+{korean:"번역 좀 해 주세요.",japanese:"翻訳してください。"},
+{korean:"발음이 어려워요.",japanese:"発音が難しいです。"},
+{korean:"몇 살이에요?",japanese:"何歳ですか？"},
+{korean:"직업이 뭐예요?",japanese:"職業は何ですか？"},
+{korean:"회사원이에요.",japanese:"会社員です。"},
+{korean:"학생이에요.",japanese:"学生です。"},
+{korean:"결혼했어요?",japanese:"結婚していますか？"},
+{korean:"가족이 몇 명이에요?",japanese:"家族は何人ですか？"},
+{korean:"연락처를 알려 주세요.",japanese:"連絡先を教えてください。"},
+{korean:"SNS 해요?",japanese:"SNSやっていますか？"},
+{korean:"인스타그램 해요?",japanese:"インスタグラムやっていますか？"},
+{korean:"카카오톡 있어요?",japanese:"カカオトークありますか？"},
+{korean:"라인 있어요?",japanese:"LINEありますか？"},
+// 約束・計画
+{korean:"내일 시간 있어요?",japanese:"明日時間ありますか？"},
+{korean:"주말에 뭐 해요?",japanese:"週末何しますか？"},
+{korean:"같이 갈래요?",japanese:"一緒に行きませんか？"},
+{korean:"몇 시에 만날까요?",japanese:"何時に会いましょうか？"},
+{korean:"어디서 만날까요?",japanese:"どこで会いましょうか？"},
+{korean:"약속을 바꿔도 돼요?",japanese:"約束を変えてもいいですか？"},
+{korean:"약속에 늦을 것 같아요.",japanese:"約束に遅れそうです。"},
+{korean:"급한 일이 생겼어요.",japanese:"急用ができました。"},
+{korean:"다음에 만나요.",japanese:"今度会いましょう。"},
+{korean:"기대돼요!",japanese:"楽しみです！"},
+// トラブル（追加）
+{korean:"길을 잃었어요.",japanese:"道に迷いました。"},
+{korean:"핸드폰을 잃어버렸어요.",japanese:"携帯電話をなくしました。"},
+{korean:"지갑을 도둑맞았어요.",japanese:"財布を盗まれました。"},
+{korean:"경찰에 신고하고 싶어요.",japanese:"警察に届けたいです。"},
+{korean:"분실물 센터가 어디예요?",japanese:"忘れ物センターはどこですか？"},
+{korean:"대사관에 연락하고 싶어요.",japanese:"大使館に連絡したいです。"},
+{korean:"보험 회사에 전화해야 해요.",japanese:"保険会社に電話しないといけません。"},
+{korean:"여권을 잃어버렸어요.",japanese:"パスポートをなくしました。"},
+{korean:"여권을 재발급 받고 싶어요.",japanese:"パスポートを再発行してもらいたいです。"},
+{korean:"비상 연락처가 어떻게 돼요?",japanese:"緊急連絡先はどうなっていますか？"},
+{korean:"도와주세요!",japanese:"助けてください！"},
+{korean:"위험해요!",japanese:"危ないです！"},
+{korean:"불이야!",japanese:"火事だ！"},
+{korean:"구급차를 불러 주세요.",japanese:"救急車を呼んでください。"},
+{korean:"경찰을 불러 주세요.",japanese:"警察を呼んでください。"},
+// 韓国料理名
+{korean:"비빔밥 주세요.",japanese:"ビビンバください。"},
+{korean:"불고기 2인분 주세요.",japanese:"プルコギ2人前ください。"},
+{korean:"삼겹살을 먹고 싶어요.",japanese:"サムギョプサルを食べたいです。"},
+{korean:"김치찌개 주세요.",japanese:"キムチチゲください。"},
+{korean:"된장찌개 주세요.",japanese:"テンジャンチゲください。"},
+{korean:"냉면 주세요.",japanese:"冷麺ください。"},
+{korean:"떡볶이를 먹어 보고 싶어요.",japanese:"トッポッキを食べてみたいです。"},
+{korean:"김밥 하나 주세요.",japanese:"キンパ1つください。"},
+{korean:"라면 끓여 주세요.",japanese:"ラーメンを作ってください。"},
+{korean:"치킨 배달시키자.",japanese:"チキンの出前を頼もう。"},
+{korean:"순두부찌개 맛있어요.",japanese:"スンドゥブチゲおいしいです。"},
+{korean:"갈비탕 주세요.",japanese:"カルビタンください。"},
+{korean:"삼계탕은 여름에 먹어요.",japanese:"サムゲタンは夏に食べます。"},
+{korean:"잡채가 맛있어요.",japanese:"チャプチェがおいしいです。"},
+{korean:"파전 하나 주세요.",japanese:"パジョン1つください。"},
+{korean:"호떡이 맛있어요.",japanese:"ホットクがおいしいです。"},
+{korean:"붕어빵을 사고 싶어요.",japanese:"たい焼きを買いたいです。"},
+{korean:"팥빙수 먹을래요?",japanese:"パッピンス食べますか？"},
+{korean:"소주 한 잔 할래요?",japanese:"焼酎一杯飲みますか？"},
+{korean:"막걸리를 마셔 보고 싶어요.",japanese:"マッコリを飲んでみたいです。"},
+// 美容・ファッション（追加）
+{korean:"머리를 잘라 주세요.",japanese:"髪を切ってください。"},
+{korean:"앞머리만 잘라 주세요.",japanese:"前髪だけ切ってください。"},
+{korean:"파마하고 싶어요.",japanese:"パーマをかけたいです。"},
+{korean:"염색하고 싶어요.",japanese:"染めたいです。"},
+{korean:"갈색으로 해 주세요.",japanese:"茶色にしてください。"},
+{korean:"너무 짧아요.",japanese:"短すぎます。"},
+{korean:"조금만 다듬어 주세요.",japanese:"少しだけ整えてください。"},
+{korean:"스킨케어 제품을 사고 싶어요.",japanese:"スキンケア製品を買いたいです。"},
+{korean:"이 화장품 인기 있어요?",japanese:"この化粧品人気ありますか？"},
+{korean:"샘플 주세요.",japanese:"サンプルをください。"},
+{korean:"피부 타입이 뭐예요?",japanese:"肌のタイプは何ですか？"},
+{korean:"건성 피부예요.",japanese:"乾燥肌です。"},
+{korean:"지성 피부예요.",japanese:"脂性肌です。"},
+{korean:"민감성 피부예요.",japanese:"敏感肌です。"},
+{korean:"이 옷 어때요?",japanese:"この服どうですか？"},
+{korean:"이 옷이 잘 어울려요.",japanese:"この服がよく似合います。"},
+{korean:"좀 비싼 것 같아요.",japanese:"少し高い気がします。"},
+{korean:"네일 아트를 하고 싶어요.",japanese:"ネイルアートをしたいです。"},
+{korean:"속눈썹 연장하고 싶어요.",japanese:"まつげエクステをしたいです。"},
+// 数字・単位表現
+{korean:"하나 주세요.",japanese:"1つください。"},
+{korean:"두 개 주세요.",japanese:"2つください。"},
+{korean:"세 명이에요.",japanese:"3人です。"},
+{korean:"네 시에 만나요.",japanese:"4時に会います。"},
+{korean:"다섯 번째예요.",japanese:"5番目です。"},
+{korean:"열 분 걸려요.",japanese:"10分かかります。"},
+{korean:"스무 살이에요.",japanese:"20歳です。"},
+{korean:"백 원이에요.",japanese:"100ウォンです。"},
+{korean:"천 원짜리 주세요.",japanese:"1000ウォンのをください。"},
+{korean:"만 원이에요.",japanese:"1万ウォンです。"},
+// 方向・位置（追加）
+{korean:"왼쪽으로 가세요.",japanese:"左に行ってください。"},
+{korean:"오른쪽으로 가세요.",japanese:"右に行ってください。"},
+{korean:"위층에 있어요.",japanese:"上の階にあります。"},
+{korean:"아래층에 있어요.",japanese:"下の階にあります。"},
+{korean:"지하에 있어요.",japanese:"地下にあります。"},
+{korean:"건너편에 있어요.",japanese:"向かい側にあります。"},
+{korean:"골목으로 들어가세요.",japanese:"路地に入ってください。"},
+{korean:"사거리에서 오른쪽으로 가세요.",japanese:"交差点で右に行ってください。"},
+{korean:"큰길로 나가세요.",japanese:"大通りに出てください。"},
+{korean:"다리를 건너세요.",japanese:"橋を渡ってください。"},
+{korean:"지하도로 건너세요.",japanese:"地下道を渡ってください。"},
+{korean:"횡단보도를 건너세요.",japanese:"横断歩道を渡ってください。"},
+// 空港・出国（追加）
+{korean:"탑승 시간이 됐어요.",japanese:"搭乗時間になりました。"},
+{korean:"면세품을 인도받고 싶어요.",japanese:"免税品を受け取りたいです。"},
+{korean:"출국 수속을 해야 해요.",japanese:"出国手続きをしなければなりません。"},
+{korean:"보안 검색을 받아야 해요.",japanese:"保安検査を受けなければなりません。"},
+{korean:"액체류는 100ml 이하만 가능해요.",japanese:"液体類は100ml以下のみ可能です。"},
+{korean:"기내 반입 금지 물품이에요.",japanese:"機内持ち込み禁止品です。"},
+{korean:"위탁 수하물로 보내야 해요.",japanese:"預入荷物として送らなければなりません。"},
+{korean:"좌석을 업그레이드하고 싶어요.",japanese:"座席をアップグレードしたいです。"},
+{korean:"비상구 좌석으로 주세요.",japanese:"非常口席にしてください。"},
+{korean:"마일리지를 적립하고 싶어요.",japanese:"マイレージを貯めたいです。"},
+// 宗教・マナー
+{korean:"신발을 벗어야 해요?",japanese:"靴を脱がなければなりませんか？"},
+{korean:"어른한테 두 손으로 드리세요.",japanese:"目上の人には両手で差し上げてください。"},
+{korean:"절을 하세요.",japanese:"お辞儀をしてください。"},
+{korean:"한국에서는 나이가 중요해요.",japanese:"韓国では年齢が重要です。"},
+{korean:"반말은 쓰면 안 돼요.",japanese:"タメ口は使ってはいけません。"},
+{korean:"존댓말을 쓰세요.",japanese:"敬語を使ってください。"},
+{korean:"건배!",japanese:"乾杯！"},
+{korean:"잘 먹겠습니다.",japanese:"いただきます。"},
+{korean:"잘 먹었습니다.",japanese:"ごちそうさまでした。"},
+{korean:"어른 앞에서 고개를 돌리고 마셔요.",japanese:"目上の人の前では顔をそらして飲みます。"},
+// 体調・症状（追加）
+{korean:"속이 안 좋아요.",japanese:"胃の調子が悪いです。"},
+{korean:"소화가 안 돼요.",japanese:"消化不良です。"},
+{korean:"설사를 해요.",japanese:"下痢をしています。"},
+{korean:"변비가 있어요.",japanese:"便秘があります。"},
+{korean:"토할 것 같아요.",japanese:"吐きそうです。"},
+{korean:"어지러워요.",japanese:"めまいがします。"},
+{korean:"숨이 차요.",japanese:"息切れがします。"},
+{korean:"가슴이 아파요.",japanese:"胸が痛いです。"},
+{korean:"허리가 아파요.",japanese:"腰が痛いです。"},
+{korean:"무릎이 아파요.",japanese:"膝が痛いです。"},
+{korean:"피가 나요.",japanese:"血が出ています。"},
+{korean:"화상을 입었어요.",japanese:"やけどをしました。"},
+{korean:"식중독인 것 같아요.",japanese:"食中毒のようです。"},
+{korean:"열사병인 것 같아요.",japanese:"熱中症のようです。"},
+{korean:"멀미가 나요.",japanese:"乗り物酔いしました。"},
+// 挨拶・お礼（追加）
+{korean:"만나서 반갑습니다.",japanese:"お会いできて嬉しいです。"},
+{korean:"오래간만이에요.",japanese:"お久しぶりです。"},
+{korean:"잘 지냈어요?",japanese:"お元気でしたか？"},
+{korean:"덕분에 잘 지냈어요.",japanese:"おかげさまで元気でした。"},
+{korean:"새해 복 많이 받으세요.",japanese:"あけましておめでとうございます。"},
+{korean:"추석 잘 보내세요.",japanese:"良い秋夕をお過ごしください。"},
+{korean:"생일 축하해요.",japanese:"お誕生日おめでとうございます。"},
+{korean:"축하해요!",japanese:"おめでとうございます！"},
+{korean:"수고하셨습니다.",japanese:"お疲れさまでした。"},
+{korean:"좋은 하루 보내세요.",japanese:"良い1日を。"},
+// 移動手段・レンタル
+{korean:"렌터카를 빌리고 싶어요.",japanese:"レンタカーを借りたいです。"},
+{korean:"국제 운전면허증이 있어요.",japanese:"国際運転免許証があります。"},
+{korean:"보험은 포함돼 있어요?",japanese:"保険は含まれていますか？"},
+{korean:"기름을 넣어야 해요.",japanese:"ガソリンを入れなければなりません。"},
+{korean:"주유소가 어디에 있어요?",japanese:"ガソリンスタンドはどこにありますか？"},
+{korean:"만원어치 넣어 주세요.",japanese:"1万ウォン分入れてください。"},
+{korean:"가득 채워 주세요.",japanese:"満タンにしてください。"},
+{korean:"고속도로 톨게이트는 어디예요?",japanese:"高速道路の料金所はどこですか？"},
+{korean:"휴게소에 들르고 싶어요.",japanese:"サービスエリアに寄りたいです。"},
+{korean:"KTX 표를 예매하고 싶어요.",japanese:"KTXのチケットを予約したいです。"},
+{korean:"무궁화호로 갈게요.",japanese:"ムグンファ号で行きます。"},
+{korean:"자유석이에요?",japanese:"自由席ですか？"},
+{korean:"지정석이에요.",japanese:"指定席です。"},
+{korean:"페리를 타고 싶어요.",japanese:"フェリーに乗りたいです。"},
+{korean:"제주도까지 비행기로 얼마나 걸려요?",japanese:"済州島まで飛行機でどのくらいかかりますか？"},
+// 観光地・地域
+{korean:"부산에 가고 싶어요.",japanese:"釜山に行きたいです。"},
+{korean:"제주도를 추천해요.",japanese:"済州島をおすすめします。"},
+{korean:"경주는 역사적인 도시예요.",japanese:"慶州は歴史的な都市です。"},
+{korean:"전주 한옥마을에 가고 싶어요.",japanese:"全州韓屋村に行きたいです。"},
+{korean:"해운대 해수욕장에 가고 싶어요.",japanese:"海雲台ビーチに行きたいです。"},
+{korean:"DMZ 투어를 하고 싶어요.",japanese:"DMZツアーをしたいです。"},
+{korean:"한라산에 올라가고 싶어요.",japanese:"漢拏山に登りたいです。"},
+{korean:"설악산이 아름다워요.",japanese:"雪岳山が美しいです。"},
+{korean:"강남에서 쇼핑하고 싶어요.",japanese:"江南でショッピングしたいです。"},
+{korean:"홍대는 젊은 사람이 많아요.",japanese:"弘大は若い人が多いです。"},
+{korean:"이태원은 외국인이 많아요.",japanese:"梨泰院は外国人が多いです。"},
+{korean:"삼청동이 분위기 좋아요.",japanese:"三清洞が雰囲気がいいです。"},
+// 時間表現（追加）
+{korean:"아까 전에요.",japanese:"さっきです。"},
+{korean:"방금 전이에요.",japanese:"ついさっきです。"},
+{korean:"곧이요.",japanese:"もうすぐです。"},
+{korean:"나중에요.",japanese:"後でです。"},
+{korean:"모레요.",japanese:"明後日です。"},
+{korean:"글피요.",japanese:"明々後日です。"},
+{korean:"지난주에요.",japanese:"先週です。"},
+{korean:"다음 주에요.",japanese:"来週です。"},
+{korean:"이번 달이에요.",japanese:"今月です。"},
+{korean:"작년에 왔어요.",japanese:"去年来ました。"},
+{korean:"올해 처음이에요.",japanese:"今年初めてです。"},
+{korean:"매일 공부해요.",japanese:"毎日勉強します。"},
+{korean:"일주일에 한 번이에요.",japanese:"週に1回です。"},
+{korean:"한 달에 두 번이에요.",japanese:"月に2回です。"},
+// 天候対応
+{korean:"비가 올 것 같아요.",japanese:"雨が降りそうです。"},
+{korean:"우산 있어요?",japanese:"傘はありますか？"},
+{korean:"우산을 안 가져왔어요.",japanese:"傘を持ってきませんでした。"},
+{korean:"비닐우산을 사고 싶어요.",japanese:"ビニール傘を買いたいです。"},
+{korean:"눈길 조심하세요.",japanese:"雪道気をつけてください。"},
+{korean:"태풍이 올 거예요.",japanese:"台風が来る予定です。"},
+// 感謝・謝罪（追加）
+{korean:"정말 미안해요.",japanese:"本当にごめんなさい。"},
+{korean:"제 잘못이에요.",japanese:"私のせいです。"},
+{korean:"용서해 주세요.",japanese:"許してください。"},
+{korean:"괜찮아요, 신경 쓰지 마세요.",japanese:"大丈夫です、気にしないでください。"},
+{korean:"별말씀을요.",japanese:"とんでもないです。"},
+{korean:"아니에요, 제가 해야 할 일이에요.",japanese:"いいえ、私がやるべきことです。"},
+// 食事の注文（追加）
+{korean:"메뉴판 좀 볼게요.",japanese:"メニューを見せてください。"},
+{korean:"오늘의 추천 메뉴가 뭐예요?",japanese:"今日のおすすめメニューは何ですか？"},
+{korean:"이거 2인분부터 주문 가능해요?",japanese:"これ2人前から注文可能ですか？"},
+{korean:"디저트 메뉴 있어요?",japanese:"デザートメニューはありますか？"},
+{korean:"아이스 아메리카노 주세요.",japanese:"アイスアメリカーノください。"},
+{korean:"따뜻한 라테 주세요.",japanese:"ホットラテください。"},
+{korean:"샷 추가해 주세요.",japanese:"ショット追加してください。"},
+// 宿泊チェックアウト
+{korean:"미니바는 사용 안 했어요.",japanese:"ミニバーは使っていません。"},
+{korean:"카드로 계산할게요.",japanese:"カードで支払います。"},
+{korean:"영수증 주세요.",japanese:"領収書ください。"},
+{korean:"즐거운 여행이었어요.",japanese:"楽しい旅行でした。"},
+{korean:"다음에 또 올게요.",japanese:"また来ます。"},
+{korean:"여기 정말 좋았어요.",japanese:"ここ本当に良かったです。"},
+];
+
+const hitokoto = [
+// 別れ際の一言
+{korean:"오늘 정말 즐거웠어요.",japanese:"今日本当に楽しかったです。"},
+{korean:"다음에 또 만나요.",japanese:"また今度会いましょう。"},
+{korean:"조심히 들어가세요.",japanese:"気をつけて帰ってください。"},
+{korean:"오늘 고마웠어요.",japanese:"今日ありがとうございました。"},
+{korean:"또 연락할게요.",japanese:"また連絡しますね。"},
+{korean:"푹 쉬세요.",japanese:"ゆっくり休んでください。"},
+{korean:"내일 봐요!",japanese:"明日会いましょう！"},
+{korean:"건강 조심하세요.",japanese:"体に気をつけてください。"},
+{korean:"잘 가! 또 보자.",japanese:"じゃあね！また会おう。"},
+{korean:"오래오래 행복하세요.",japanese:"ずっとお幸せに。"},
+{korean:"다시 만날 날을 기다릴게요.",japanese:"また会える日を楽しみにしています。"},
+{korean:"헤어지기 아쉬워요.",japanese:"別れるのが名残惜しいです。"},
+{korean:"좋은 시간 보내세요.",japanese:"良い時間を過ごしてください。"},
+{korean:"행복한 하루 보내세요.",japanese:"幸せな1日を過ごしてください。"},
+{korean:"꿈에서 봐요.",japanese:"夢で会いましょう。"},
+// 励ましの一言
+{korean:"힘내세요!",japanese:"頑張ってください！"},
+{korean:"할 수 있어요!",japanese:"できますよ！"},
+{korean:"믿고 있어요.",japanese:"信じています。"},
+{korean:"응원할게요.",japanese:"応援します。"},
+{korean:"포기하지 마세요.",japanese:"あきらめないでください。"},
+{korean:"잘 될 거예요.",japanese:"うまくいきますよ。"},
+{korean:"걱정하지 마세요.",japanese:"心配しないでください。"},
+{korean:"다 잘 될 거예요.",japanese:"全部うまくいきますよ。"},
+{korean:"당신은 잘하고 있어요.",japanese:"あなたはよくやっています。"},
+{korean:"최선을 다하면 돼요.",japanese:"最善を尽くせばいいです。"},
+{korean:"언제나 응원하고 있어요.",japanese:"いつも応援しています。"},
+{korean:"좋은 결과 있을 거예요.",japanese:"良い結果がありますよ。"},
+{korean:"파이팅!",japanese:"ファイト！"},
+{korean:"자신감을 가지세요.",japanese:"自信を持ってください。"},
+{korean:"넌 충분히 잘하고 있어.",japanese:"君は十分よくやってるよ。"},
+// 感謝の一言
+{korean:"정말 감사합니다.",japanese:"本当にありがとうございます。"},
+{korean:"덕분이에요.",japanese:"おかげです。"},
+{korean:"감사한 마음을 잊지 않을게요.",japanese:"感謝の気持ちを忘れません。"},
+{korean:"당신 덕분에 힘이 났어요.",japanese:"あなたのおかげで力が出ました。"},
+{korean:"항상 고마워요.",japanese:"いつもありがとう。"},
+{korean:"말로 다 할 수 없을 만큼 감사해요.",japanese:"言葉では言い尽くせないほど感謝しています。"},
+{korean:"신경 써 줘서 고마워요.",japanese:"気にかけてくれてありがとう。"},
+{korean:"친절하게 대해 줘서 감사해요.",japanese:"親切にしてくれて感謝します。"},
+{korean:"배려해 줘서 고마워요.",japanese:"配慮してくれてありがとう。"},
+{korean:"좋은 추억을 만들어 줘서 감사해요.",japanese:"良い思い出を作ってくれてありがとう。"},
+// 謝罪の一言
+{korean:"진심으로 사과드려요.",japanese:"心からお詫びします。"},
+{korean:"제가 잘못했어요.",japanese:"私が悪かったです。"},
+{korean:"다시는 안 그럴게요.",japanese:"もう二度としません。"},
+{korean:"불편을 드려서 죄송해요.",japanese:"ご迷惑をおかけしてすみません。"},
+{korean:"늦어서 미안해요.",japanese:"遅くなってごめんなさい。"},
+{korean:"기다리게 해서 미안해요.",japanese:"待たせてごめんなさい。"},
+{korean:"실수해서 죄송합니다.",japanese:"ミスしてすみません。"},
+{korean:"깜빡했어요, 미안해요.",japanese:"うっかりしました、ごめんなさい。"},
+{korean:"오해가 있었던 것 같아요.",japanese:"誤解があったようです。"},
+{korean:"화해하고 싶어요.",japanese:"仲直りしたいです。"},
+// 褒める一言
+{korean:"정말 잘했어요!",japanese:"本当によくやりました！"},
+{korean:"대단해요!",japanese:"すごいです！"},
+{korean:"역시 당신이에요.",japanese:"さすがあなたです。"},
+{korean:"센스가 좋아요.",japanese:"センスがいいです。"},
+{korean:"멋있어요!",japanese:"かっこいいです！"},
+{korean:"예쁘네요!",japanese:"きれいですね！"},
+{korean:"잘 어울려요.",japanese:"よく似合います。"},
+{korean:"요리를 정말 잘하시네요.",japanese:"料理が本当にお上手ですね。"},
+{korean:"한국어가 많이 늘었어요.",japanese:"韓国語がとても上達しました。"},
+{korean:"발음이 좋아요.",japanese:"発音がいいです。"},
+{korean:"노력하는 모습이 멋있어요.",japanese:"努力する姿が素敵です。"},
+{korean:"그 옷 잘 어울려요.",japanese:"その服よく似合いますよ。"},
+{korean:"웃는 모습이 예뻐요.",japanese:"笑った顔がきれいです。"},
+{korean:"마음이 따뜻한 사람이에요.",japanese:"心が温かい人です。"},
+{korean:"진짜 똑똑하네요.",japanese:"本当に賢いですね。"},
+// 約束の一言
+{korean:"꼭 지킬게요.",japanese:"必ず守ります。"},
+{korean:"약속할게요.",japanese:"約束します。"},
+{korean:"절대 잊지 않을게요.",japanese:"絶対忘れません。"},
+{korean:"꼭 다시 올게요.",japanese:"必ずまた来ます。"},
+{korean:"연락 기다릴게요.",japanese:"連絡待ってます。"},
+{korean:"다음에 제가 살게요.",japanese:"次は私がおごります。"},
+{korean:"언젠가 꼭 만나요.",japanese:"いつか必ず会いましょう。"},
+{korean:"이 은혜를 꼭 갚을게요.",japanese:"この恩は必ずお返しします。"},
+// 慰めの一言
+{korean:"괜찮아요.",japanese:"大丈夫ですよ。"},
+{korean:"울어도 돼요.",japanese:"泣いてもいいですよ。"},
+{korean:"시간이 지나면 괜찮아질 거예요.",japanese:"時間が経てば大丈夫になりますよ。"},
+{korean:"제가 옆에 있을게요.",japanese:"私がそばにいますよ。"},
+{korean:"혼자가 아니에요.",japanese:"一人じゃないですよ。"},
+{korean:"무슨 일이든 말해요.",japanese:"何でも言ってください。"},
+{korean:"내 편이니까 걱정 마세요.",japanese:"私は味方だから心配しないで。"},
+{korean:"너무 자책하지 마세요.",japanese:"あまり自分を責めないでください。"},
+{korean:"다 지나갈 거예요.",japanese:"全部過ぎ去りますよ。"},
+{korean:"좋은 일이 올 거예요.",japanese:"良いことがやってきますよ。"},
+// お祝いの一言
+{korean:"축하드려요!",japanese:"おめでとうございます！"},
+{korean:"생일 축하합니다!",japanese:"お誕生日おめでとうございます！"},
+{korean:"결혼 축하해요!",japanese:"結婚おめでとう！"},
+{korean:"합격을 축하해요!",japanese:"合格おめでとう！"},
+{korean:"승진 축하해요!",japanese:"昇進おめでとう！"},
+{korean:"졸업 축하해요!",japanese:"卒業おめでとう！"},
+{korean:"새해 복 많이 받으세요!",japanese:"良い新年をお迎えください！"},
+{korean:"메리 크리스마스!",japanese:"メリークリスマス！"},
+{korean:"건강하고 행복하세요.",japanese:"健康で幸せでいてください。"},
+{korean:"소원이 이루어지길 바라요.",japanese:"願いが叶いますように。"},
+// 旅先での最後の一言
+{korean:"정말 좋은 여행이었어요.",japanese:"本当にいい旅行でした。"},
+{korean:"잊을 수 없는 추억이에요.",japanese:"忘れられない思い出です。"},
+{korean:"한국이 너무 좋아요.",japanese:"韓国がとても好きです。"},
+{korean:"또 오고 싶어요.",japanese:"また来たいです。"},
+{korean:"한국 사람들이 정말 친절해요.",japanese:"韓国の人たちは本当に親切です。"},
+{korean:"여기서 많이 배웠어요.",japanese:"ここでたくさん学びました。"},
+{korean:"한국 음식이 제일 맛있어요.",japanese:"韓国料理が一番おいしいです。"},
+{korean:"다음에는 친구랑 같이 올게요.",japanese:"次は友達と一緒に来ます。"},
+{korean:"한국어 더 공부해서 올게요.",japanese:"韓国語をもっと勉強して来ます。"},
+{korean:"꼭 다시 만나요.",japanese:"必ずまた会いましょう。"},
+// 名言風の一言
+{korean:"하면 된다!",japanese:"やればできる！"},
+{korean:"시작이 반이다.",japanese:"始めれば半分終わったようなもの。"},
+{korean:"천리 길도 한 걸음부터.",japanese:"千里の道も一歩から。"},
+{korean:"꿈은 이루어진다.",japanese:"夢は叶う。"},
+{korean:"오늘 하루도 수고했어요.",japanese:"今日も1日お疲れさまでした。"},
+{korean:"내일은 더 좋은 날이 될 거예요.",japanese:"明日はもっと良い日になりますよ。"},
+{korean:"매일매일이 소중해요.",japanese:"毎日毎日が大切です。"},
+{korean:"후회 없는 하루를 보내세요.",japanese:"後悔のない1日を過ごしてください。"},
+{korean:"행복은 가까이에 있어요.",japanese:"幸せは近くにあります。"},
+{korean:"웃으면 복이 와요.",japanese:"笑えば福が来ます。"},
+// 気持ちを伝える一言
+{korean:"좋아해요.",japanese:"好きです。"},
+{korean:"사랑해요.",japanese:"愛しています。"},
+{korean:"보고 싶어요.",japanese:"会いたいです。"},
+{korean:"고마운 사람이에요.",japanese:"ありがたい人です。"},
+{korean:"소중한 사람이에요.",japanese:"大切な人です。"},
+{korean:"당신이 있어서 행복해요.",japanese:"あなたがいて幸せです。"},
+{korean:"만나서 다행이에요.",japanese:"出会えてよかったです。"},
+{korean:"평생 잊지 못할 거예요.",japanese:"一生忘れないでしょう。"},
+{korean:"항상 생각하고 있어요.",japanese:"いつも思っています。"},
+{korean:"우리 우정은 영원해요.",japanese:"私たちの友情は永遠です。"},
+];
+
+// ===== 数字変換 =====
+function numberToSinoKorean(n) {
+  if (n === 0) return '영';
+  const d = ['','일','이','삼','사','오','육','칠','팔','구'];
+  const u = ['','십','백','천'];
+  let r = ''; const s = String(n);
+  for (let i = 0; i < s.length; i++) {
+    const dig = parseInt(s[i]), ui = s.length-1-i;
+    if (dig === 0) continue;
+    r += (dig === 1 && ui > 0) ? u[ui] : d[dig] + u[ui];
+  }
+  return r;
+}
+function numberToNativeKorean(n) {
+  if (n > 99 || n < 1) return '';
+  const ones = ['','하나','둘','셋','넷','다섯','여섯','일곱','여덟','아홉'];
+  const tens = ['','열','스물','서른','마흔','쉰','예순','일흔','여든','아흔'];
+  const t = Math.floor(n/10), o = n%10;
+  return tens[t] + (t > 0 && o > 0 ? ' ' : '') + ones[o];
+}
+
+// ===== State =====
+let mode = '', courseMins = 0, timerInterval = null, timeLeft = 0;
+let current = null, currentNumber = null;
+let correctCount = 0, totalCount = 0;
+let mistakes = []; // {question, correctAnswer, yourAnswer, detail}
+let history = [];
+let useVoice = true;
+
+// ===== Screen =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ===== コース開始 =====
+function startCourse(m, mins) {
+  mode = m; courseMins = mins;
+  correctCount = 0; totalCount = 0;
+  mistakes = []; history = [];
+  timeLeft = mins * 60;
+  showScreen('screen-quiz');
+  updateTimer();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimer();
+    if (timeLeft <= 0) { clearInterval(timerInterval); endCourse(); }
+  }, 1000);
+  nextQuestion();
+}
+
+function updateTimer() {
+  const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+  const el = document.getElementById('timer');
+  el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+  el.classList.toggle('warn', timeLeft <= 10);
+}
+
+function endCourse() {
+  clearInterval(timerInterval);
+  stopListening();
+  // 結果表示
+  const pct = totalCount > 0 ? Math.round(correctCount / totalCount * 100) : 0;
+  document.getElementById('result-score').textContent = `${correctCount} / ${totalCount}`;
+  document.getElementById('result-detail').textContent = `正解率 ${pct}%`;
+  const list = document.getElementById('mistake-list');
+  if (mistakes.length > 0) {
+    let html = '<h3>できなかった問題</h3>';
+    mistakes.forEach(m => {
+      const escaped = m.correctAnswer.replace(/'/g, "\\'");
+      html += `<div class="mistake-item">
+        <div>
+          <div class="word">${m.correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div>
+          <div class="meaning">${m.question}</div>
+          ${m.yourAnswer ? `<div class="meaning" style="color:#e94560;">あなたの答え: ${m.yourAnswer}</div>` : ''}
+        </div>
+      </div>`;
+    });
+    list.innerHTML = html;
+  } else {
+    list.innerHTML = '<div style="text-align:center;color:#4ecca3;padding:20px;">全問正解！すごい！</div>';
+  }
+  showScreen('screen-result');
+}
+
+function goHome() { showScreen('screen-home'); }
+
+// ===== 問題 =====
+function shuffle() {
+  const pool = (mode === 'travel') ? travel : (mode === 'hitokoto') ? hitokoto : words;
+  let attempts = 0, w;
+  do {
+    w = pool[Math.floor(Math.random() * pool.length)];
+    attempts++;
+  } while (history.includes(w.korean) && attempts < 20);
+  history.push(w.korean);
+  if (history.length > 15) history.shift();
+  return w;
+}
+
+function nextQuestion() {
+  const label = document.getElementById('card-label');
+  const question = document.getElementById('question');
+  const hint = document.getElementById('hint');
+
+  if (mode === 'sino') {
+    const num = Math.floor(Math.random() * 9999) + 1;
+    const korean = numberToSinoKorean(num);
+    currentNumber = { questionText: String(num), answer: korean, detail: `${num} = ${korean}` };
+    current = null;
+    label.textContent = '数字 → 漢数詞で答えてください';
+    question.textContent = String(num);
+    hint.textContent = '일, 이, 삼... 십, 백, 천';
+  } else if (mode === 'native') {
+    const num = Math.floor(Math.random() * 99) + 1;
+    const korean = numberToNativeKorean(num);
+    currentNumber = { questionText: String(num), answer: korean, detail: `${num} = ${korean}` };
+    current = null;
+    label.textContent = '数字 → 固有数詞で答えてください';
+    question.textContent = String(num);
+    hint.textContent = '하나, 둘, 셋... 열, 스물, 서른...';
+  } else {
+    currentNumber = null;
+    current = shuffle();
+    if (mode === 'word') {
+      label.textContent = '日本語 → 韓国語を答えてください';
+      question.textContent = current.japanese;
+      hint.textContent = '';
+    } else if (mode === 'travel') {
+      label.textContent = '旅行フレーズを韓国語で答えてください';
+      question.textContent = current.japanese;
+      hint.textContent = '';
+    } else if (mode === 'hitokoto') {
+      label.textContent = '最後に一言！韓国語で答えてください';
+      question.textContent = current.japanese;
+      hint.textContent = '';
+    } else {
+      label.textContent = '例文を韓国語で答えてください';
+      question.textContent = current.exampleJp;
+      hint.textContent = `ヒント: ${current.japanese}（${current.korean}）`;
+    }
+  }
+
+  document.getElementById('answer-input').value = '';
+  document.getElementById('feedback').innerHTML = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('voice-status').textContent = '';
+  if (useVoice) document.getElementById('answer-input').value = '';
+  else document.getElementById('answer-input').focus();
+}
+
+function normalize(s) { return s.trim().replace(/\s+/g,' ').replace(/[.。？?!！,，、]/g,''); }
+
+function getCorrectInfo() {
+  let correctAnswer, questionText, detailHtml;
+  if (mode === 'sino' || mode === 'native') {
+    correctAnswer = currentNumber.answer;
+    questionText = currentNumber.questionText;
+    detailHtml = currentNumber.detail;
+  } else if (mode === 'word' || mode === 'travel' || mode === 'hitokoto') {
+    correctAnswer = current.korean;
+    questionText = current.japanese;
+    detailHtml = `${current.korean} = ${current.japanese}`;
+  } else {
+    correctAnswer = current.exampleKr;
+    questionText = current.exampleJp;
+    detailHtml = `${current.korean} = ${current.japanese}<br>${current.exampleKr}<br>${current.exampleJp}`;
+  }
+  return { correctAnswer, questionText, detailHtml };
+}
+
+function checkAnswer() {
+  if (!current && !currentNumber) return;
+  const input = document.getElementById('answer-input').value;
+  if (!input.trim()) return;
+  const { correctAnswer, questionText, detailHtml } = getCorrectInfo();
+  const normalizedInput = normalize(input);
+  const isCorrect = (mode === 'sino' || mode === 'native')
+    ? normalizedInput.replace(/\s/g,'') === correctAnswer.replace(/\s/g,'')
+    : normalize(correctAnswer) === normalizedInput;
+
+  totalCount++;
+  const feedback = document.getElementById('feedback');
+  const escaped = correctAnswer.replace(/'/g, "\\'");
+
+  if (isCorrect) {
+    correctCount++;
+    feedback.className = 'feedback correct';
+    feedback.innerHTML = `<div class="answer-display">正解！ ${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div><div class="answer-detail">${detailHtml}</div>`;
+    speakKorean(correctAnswer);
+    updateScoreBar();
+    setTimeout(nextQuestion, 1800);
+  } else {
+    feedback.className = 'feedback wrong';
+    feedback.innerHTML = `<div class="answer-display">正解: ${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div><div class="answer-detail">${detailHtml}</div>`;
+    speakKorean(correctAnswer);
+    mistakes.push({ question: questionText, correctAnswer, yourAnswer: input });
+    document.getElementById('next-btn').style.display = 'block';
+    updateScoreBar();
+  }
+}
+
+function skipQuestion() {
+  if (!current && !currentNumber) return;
+  const { correctAnswer, questionText, detailHtml } = getCorrectInfo();
+  const feedback = document.getElementById('feedback');
+  const escaped = correctAnswer.replace(/'/g, "\\'");
+  feedback.className = 'feedback wrong';
+  feedback.innerHTML = `<div class="answer-display">答え: ${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">🔊</button></div><div class="answer-detail">${detailHtml}</div>`;
+  speakKorean(correctAnswer);
+  mistakes.push({ question: questionText, correctAnswer, yourAnswer: '' });
+  document.getElementById('next-btn').style.display = 'block';
+  updateScoreBar();
+}
+
+function updateScoreBar() {
+  document.getElementById('score-bar').textContent = `${correctCount}/${totalCount}問`;
+}
+
+// ===== 音声合成（TTS） =====
+function speakKorean(text) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ko-KR'; u.rate = 0.85;
+  const v = speechSynthesis.getVoices().find(v => v.lang.startsWith('ko'));
+  if (v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices(); }
+
+// ===== 音声認識 =====
+let recognition = null, isListening = false;
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'ko-KR'; recognition.interimResults = false; recognition.continuous = false;
+  recognition.onresult = (e) => {
+    const t = e.results[0][0].transcript;
+    document.getElementById('answer-input').value = t;
+    // 認識結果と正誤を即座に表示
+    const { correctAnswer } = getCorrectInfo();
+    const ni = normalize(t);
+    const isNum = (mode === 'sino' || mode === 'native');
+    const ok = isNum
+      ? ni.replace(/\s/g,'') === correctAnswer.replace(/\s/g,'')
+      : normalize(correctAnswer) === ni;
+    const vs = document.getElementById('voice-status');
+    if (ok) {
+      vs.innerHTML = `<span style="color:#4ecca3;font-size:1rem;font-weight:bold;">⭕ 正解！</span> 認識: ${t}`;
+    } else {
+      vs.innerHTML = `<span style="color:#e94560;font-size:1rem;font-weight:bold;">❌ 不正解</span> 認識: ${t}`;
+    }
+    stopListening();
+    setTimeout(checkAnswer, 500);
+  };
+  recognition.onerror = (e) => {
+    document.getElementById('voice-status').textContent = e.error === 'no-speech' ? '音声が検出されませんでした' : `エラー: ${e.error}`;
+    stopListening();
+  };
+  recognition.onend = () => stopListening();
+}
+
+function toggleListening() {
+  isListening ? stopListening() : startListening();
+}
+function startListening() {
+  if (!recognition) { document.getElementById('voice-status').textContent = 'Chromeで開いてください'; return; }
+  isListening = true;
+  document.getElementById('mic-btn').classList.add('listening');
+  document.getElementById('mic-btn').textContent = '🎤 聞いています...';
+  document.getElementById('voice-status').textContent = '韓国語で話してください...';
+  recognition.start();
+}
+function stopListening() {
+  isListening = false;
+  const b = document.getElementById('mic-btn');
+  if (b) { b.classList.remove('listening'); b.textContent = '🎤 タップして話す'; }
+  try { recognition?.stop(); } catch(e) {}
+}
+
+function toggleInputMethod() {
+  useVoice = !useVoice;
+  document.getElementById('voice-row').style.display = useVoice ? 'flex' : 'none';
+  document.getElementById('keyboard-row').style.display = useVoice ? 'none' : 'flex';
+  document.getElementById('toggle-input-btn').textContent = useVoice ? 'キーボード' : '音声入力';
+  if (!useVoice) { stopListening(); document.getElementById('answer-input').focus(); }
+}
+
+// Enter key
+document.getElementById('answer-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    document.getElementById('next-btn').style.display === 'block' ? nextQuestion() : checkAnswer();
+  }
+});
+</script>
+</body>
+</html>
