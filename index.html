@@ -60,6 +60,10 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
 .card .label { font-size: 0.8rem; color: #999; margin-bottom: 10px; letter-spacing: 1px; }
 .card .question { font-size: 1.7rem; font-weight: bold; color: #222; line-height: 1.6; }
 .card .hint { font-size: 0.85rem; color: #aaa; margin-top: 10px; }
+.q-timer-wrap { width: 100%; height: 6px; background: #e8e8e8; border-radius: 3px; margin-top: 14px; overflow: hidden; }
+.q-timer-bar { height: 100%; background: #4ecca3; border-radius: 3px; transition: width 1s linear; width: 100%; }
+.q-timer-bar.hurry { background: #e94560; }
+.q-timer-text { font-size: 0.8rem; color: #999; margin-top: 4px; }
 .input-area { width: 100%; }
 .input-row { display: flex; gap: 8px; margin-bottom: 10px; justify-content: center; }
 #answer-input {
@@ -188,6 +192,10 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
     <div class="label" id="card-label">日本語 → 韓国語</div>
     <div class="question" id="question">読み込み中...</div>
     <div class="hint" id="hint"></div>
+    <div class="q-timer-wrap">
+      <div class="q-timer-bar" id="q-timer-bar"></div>
+    </div>
+    <div class="q-timer-text" id="q-timer-text"></div>
   </div>
   <div class="input-area">
     <div class="input-row" id="voice-row">
@@ -1656,6 +1664,37 @@ let correctCount = 0, totalCount = 0;
 let mistakes = []; // {question, correctAnswer, yourAnswer, detail}
 let history = [];
 let useVoice = true;
+let qTimer = null, qTimeLeft = 0, qTimeMax = 0;
+
+function getQuestionTime() {
+  // モードに応じた1問あたりの秒数
+  if (mode === 'word' || mode === 'sino' || mode === 'native') return 10;
+  if (mode === 'hitokoto') return 15;
+  return 20; // sentence, travel
+}
+
+function startQuestionTimer() {
+  clearInterval(qTimer);
+  qTimeMax = getQuestionTime();
+  qTimeLeft = qTimeMax;
+  const bar = document.getElementById('q-timer-bar');
+  const text = document.getElementById('q-timer-text');
+  bar.style.width = '100%';
+  bar.classList.remove('hurry');
+  text.textContent = `${qTimeLeft}秒`;
+  qTimer = setInterval(() => {
+    qTimeLeft--;
+    if (qTimeLeft < 0) { clearInterval(qTimer); skipQuestion(); return; }
+    const pct = (qTimeLeft / qTimeMax) * 100;
+    bar.style.width = pct + '%';
+    bar.classList.toggle('hurry', qTimeLeft <= 3);
+    text.textContent = `${qTimeLeft}秒`;
+  }, 1000);
+}
+
+function stopQuestionTimer() {
+  clearInterval(qTimer);
+}
 
 // ===== Screen =====
 function showScreen(id) {
@@ -1694,6 +1733,7 @@ function updateTimer() {
 
 function endCourse() {
   clearInterval(timerInterval);
+  stopQuestionTimer();
   stopListening();
   // 結果表示
   const pct = totalCount > 0 ? Math.round(correctCount / totalCount * 100) : 0;
@@ -1784,6 +1824,7 @@ function nextQuestion() {
   document.getElementById('voice-status').textContent = '';
   if (useVoice) document.getElementById('answer-input').value = '';
   else document.getElementById('answer-input').focus();
+  startQuestionTimer();
 }
 
 function normalize(s) { return s.trim().replace(/\s+/g,' ').replace(/[.。？?!！,，、]/g,''); }
@@ -1816,6 +1857,7 @@ function checkAnswer() {
     ? normalizedInput.replace(/\s/g,'') === correctAnswer.replace(/\s/g,'')
     : normalize(correctAnswer) === normalizedInput;
 
+  stopQuestionTimer();
   totalCount++;
   const feedback = document.getElementById('feedback');
   const escaped = correctAnswer.replace(/'/g, "\\'");
@@ -1837,6 +1879,7 @@ function checkAnswer() {
 }
 
 function skipQuestion() {
+  stopQuestionTimer();
   if (!current && !currentNumber) return;
   const { correctAnswer, questionText, detailHtml } = getCorrectInfo();
   const feedback = document.getElementById('feedback');
