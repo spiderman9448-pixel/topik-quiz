@@ -2599,6 +2599,12 @@ function confirmQuit() {
 function endCourse() {
   clearInterval(timerInterval);
   stopQuestionTimer();
+  clearTimeout(autoAdvanceTimer);
+  clearTimeout(micStartTimer);
+  autoAdvanceTimer = null;
+  micStartTimer = null;
+  answered = true;       // 以降の音声認識・タイマーを全ブロック
+  isRetryAttempt = false;
   stopListening();
   speechSynthesis.cancel();
   // 学習記録を保存
@@ -2830,6 +2836,8 @@ function checkAnswer() {
   if (!input.trim()) return;
   answered = true;
   clearTimeout(micStartTimer);
+  clearTimeout(autoAdvanceTimer); // 孤立タイマー防止（リトライ8秒タイマー等）
+  autoAdvanceTimer = null;
   stopListening();
   const { correctAnswer, questionText, detailHtml } = getCorrectInfo();
   const normalizedInput = normalize(input);
