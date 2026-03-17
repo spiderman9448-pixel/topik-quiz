@@ -1665,6 +1665,7 @@ let mistakes = []; // {question, correctAnswer, yourAnswer, detail}
 let history = [];
 let useVoice = true;
 let qTimer = null, qTimeLeft = 0, qTimeMax = 0;
+let isLastQuestion = false;
 
 function getQuestionTime() {
   // モードに応じた1問あたりの秒数
@@ -1713,6 +1714,7 @@ function startCourse(m, mins) {
   mode = m; courseMins = mins;
   correctCount = 0; totalCount = 0;
   mistakes = []; history = [];
+  isLastQuestion = false;
   timeLeft = mins * 60;
   showScreen('screen-quiz');
   updateTimer();
@@ -1721,19 +1723,10 @@ function startCourse(m, mins) {
     updateTimer();
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
-      stopQuestionTimer();
-      // 最後の問題の答えを表示してから終了
-      if (current || currentNumber) {
-        const { correctAnswer, questionText, detailHtml } = getCorrectInfo();
-        const feedback = document.getElementById('feedback');
-        const escaped = correctAnswer.replace(/'/g, "\\'");
-        feedback.className = 'feedback wrong';
-        feedback.innerHTML = `<div class="result-icon">⏰</div><div class="result-label">時間切れ</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
-        mistakes.push({ question: questionText, correctAnswer, yourAnswer: '' });
-        speakKorean(correctAnswer, () => setTimeout(endCourse, 500));
-      } else {
-        endCourse();
-      }
+      // 最後の問題はそのまま回答を待つ
+      isLastQuestion = true;
+      document.getElementById('timer').textContent = 'ラスト！';
+      document.getElementById('timer').classList.add('warn');
     }
   }, 1000);
   nextQuestion();
@@ -1835,7 +1828,10 @@ function nextQuestion() {
   document.getElementById('answer-input').value = '';
   document.getElementById('feedback').innerHTML = '';
   document.getElementById('feedback').className = 'feedback';
-  document.getElementById('next-btn').style.display = 'none';
+  const nb = document.getElementById('next-btn');
+  nb.style.display = 'none';
+  nb.textContent = '次の問題 →';
+  nb.onclick = nextQuestion;
   document.getElementById('voice-status').textContent = '';
   if (useVoice) {
     document.getElementById('answer-input').value = '';
@@ -1886,14 +1882,24 @@ function checkAnswer() {
     correctCount++;
     feedback.className = 'feedback correct';
     feedback.innerHTML = `<div class="result-icon">⭕</div><div class="result-label">正解！</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
-    speakKorean(correctAnswer, () => setTimeout(nextQuestion, 300));
+    if (isLastQuestion) {
+      speakKorean(correctAnswer, () => setTimeout(endCourse, 500));
+    } else {
+      speakKorean(correctAnswer, () => setTimeout(nextQuestion, 300));
+    }
     updateScoreBar();
   } else {
     feedback.className = 'feedback wrong';
     feedback.innerHTML = `<div class="result-icon">❌</div><div class="result-label">不正解</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
     speakKorean(correctAnswer);
     mistakes.push({ question: questionText, correctAnswer, yourAnswer: input });
-    document.getElementById('next-btn').style.display = 'block';
+    if (isLastQuestion) {
+      document.getElementById('next-btn').style.display = 'block';
+      document.getElementById('next-btn').textContent = '結果を見る →';
+      document.getElementById('next-btn').onclick = endCourse;
+    } else {
+      document.getElementById('next-btn').style.display = 'block';
+    }
     updateScoreBar();
   }
 }
@@ -1909,6 +1915,10 @@ function skipQuestion() {
   speakKorean(correctAnswer);
   mistakes.push({ question: questionText, correctAnswer, yourAnswer: '' });
   document.getElementById('next-btn').style.display = 'block';
+  if (isLastQuestion) {
+    document.getElementById('next-btn').textContent = '結果を見る →';
+    document.getElementById('next-btn').onclick = endCourse;
+  }
   updateScoreBar();
 }
 
