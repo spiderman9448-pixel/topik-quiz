@@ -1662,7 +1662,7 @@ let mode = '', courseMins = 0, timerInterval = null, timeLeft = 0;
 let current = null, currentNumber = null;
 let correctCount = 0, totalCount = 0;
 let mistakes = []; // {question, correctAnswer, yourAnswer, detail}
-let history = [];
+let shuffledQueue = [], queueIndex = 0;
 let useVoice = true;
 let qTimer = null, qTimeLeft = 0, qTimeMax = 0;
 let isLastQuestion = false;
@@ -1713,8 +1713,12 @@ function switchTab(tabId) {
 function startCourse(m, mins) {
   mode = m; courseMins = mins;
   correctCount = 0; totalCount = 0;
-  mistakes = []; history = [];
+  mistakes = [];
   isLastQuestion = false;
+  // 全問シャッフルしてキューに入れる
+  const pool = (m === 'travel') ? travel : (m === 'hitokoto') ? hitokoto : words;
+  shuffledQueue = shuffleArray(pool);
+  queueIndex = 0;
   timeLeft = mins * 60;
   showScreen('screen-quiz');
   updateTimer();
@@ -1770,16 +1774,22 @@ function endCourse() {
 function goHome() { showScreen('screen-home'); }
 
 // ===== 問題 =====
-function shuffle() {
-  const pool = (mode === 'travel') ? travel : (mode === 'hitokoto') ? hitokoto : words;
-  let attempts = 0, w;
-  do {
-    w = pool[Math.floor(Math.random() * pool.length)];
-    attempts++;
-  } while (history.includes(w.korean) && attempts < 20);
-  history.push(w.korean);
-  if (history.length > 15) history.shift();
-  return w;
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getNextFromQueue() {
+  if (queueIndex >= shuffledQueue.length) {
+    // 全問出し終わったら再シャッフル
+    shuffledQueue = shuffleArray(shuffledQueue);
+    queueIndex = 0;
+  }
+  return shuffledQueue[queueIndex++];
 }
 
 function nextQuestion() {
@@ -1805,7 +1815,7 @@ function nextQuestion() {
     hint.textContent = '하나, 둘, 셋... 열, 스물, 서른...';
   } else {
     currentNumber = null;
-    current = shuffle();
+    current = getNextFromQueue();
     if (mode === 'word') {
       label.textContent = '日本語 → 韓国語を答えてください';
       question.textContent = current.japanese;
