@@ -211,17 +211,35 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
     </div>
   </div>
   <div class="tab-content" id="tab-number">
-    <div class="section-label">漢数詞（일, 이, 삼... 1〜9999）</div>
+    <div class="section-label">漢数詞 初級（1〜10）</div>
     <div class="course-grid">
-      <div class="course-card" onclick="startCourse('sino',1)"><div class="left"><div class="title">漢数詞クイズ</div><div class="desc">일, 이, 삼, 십, 백, 천</div></div><div class="time">1分</div></div>
-      <div class="course-card" onclick="startCourse('sino',3)"><div class="left"><div class="title">漢数詞クイズ</div><div class="desc">일, 이, 삼, 십, 백, 천</div></div><div class="time">3分</div></div>
-      <div class="course-card" onclick="startCourse('sino',5)"><div class="left"><div class="title">漢数詞クイズ</div><div class="desc">일, 이, 삼, 십, 백, 천</div></div><div class="time">5分</div></div>
+      <div class="course-card" onclick="startNumberCourse('sino',1,1,10)"><div class="left"><div class="title">🟢 漢数詞 初級</div><div class="desc">일〜십（1〜10）</div></div><div class="time">1分</div></div>
+      <div class="course-card" onclick="startNumberCourse('sino',3,1,10)"><div class="left"><div class="title">🟢 漢数詞 初級</div><div class="desc">일〜십（1〜10）</div></div><div class="time">3分</div></div>
     </div>
-    <div class="section-label" style="margin-top:20px;">固有数詞（하나, 둘, 셋... 1〜99）</div>
+    <div class="section-label" style="margin-top:12px;">漢数詞 中級（1〜100）</div>
     <div class="course-grid">
-      <div class="course-card" onclick="startCourse('native',1)"><div class="left"><div class="title">固有数詞クイズ</div><div class="desc">하나, 둘, 열, 스물...</div></div><div class="time">1分</div></div>
-      <div class="course-card" onclick="startCourse('native',3)"><div class="left"><div class="title">固有数詞クイズ</div><div class="desc">하나, 둘, 열, 스물...</div></div><div class="time">3分</div></div>
-      <div class="course-card" onclick="startCourse('native',5)"><div class="left"><div class="title">固有数詞クイズ</div><div class="desc">하나, 둘, 열, 스물...</div></div><div class="time">5分</div></div>
+      <div class="course-card" onclick="startNumberCourse('sino',1,1,100)"><div class="left"><div class="title">🟡 漢数詞 中級</div><div class="desc">일〜백（1〜100）</div></div><div class="time">1分</div></div>
+      <div class="course-card" onclick="startNumberCourse('sino',3,1,100)"><div class="left"><div class="title">🟡 漢数詞 中級</div><div class="desc">일〜백（1〜100）</div></div><div class="time">3分</div></div>
+    </div>
+    <div class="section-label" style="margin-top:12px;">漢数詞 上級（1〜9999）</div>
+    <div class="course-grid">
+      <div class="course-card" onclick="startNumberCourse('sino',3,1,9999)"><div class="left"><div class="title">🔴 漢数詞 上級</div><div class="desc">일〜구천구백구십구</div></div><div class="time">3分</div></div>
+      <div class="course-card" onclick="startNumberCourse('sino',5,1,9999)"><div class="left"><div class="title">🔴 漢数詞 上級</div><div class="desc">일〜구천구백구십구</div></div><div class="time">5分</div></div>
+    </div>
+    <div class="section-label" style="margin-top:20px;">固有数詞 初級（1〜10）</div>
+    <div class="course-grid">
+      <div class="course-card" onclick="startNumberCourse('native',1,1,10)"><div class="left"><div class="title">🟢 固有数詞 初級</div><div class="desc">하나〜열（1〜10）</div></div><div class="time">1分</div></div>
+      <div class="course-card" onclick="startNumberCourse('native',3,1,10)"><div class="left"><div class="title">🟢 固有数詞 初級</div><div class="desc">하나〜열（1〜10）</div></div><div class="time">3分</div></div>
+    </div>
+    <div class="section-label" style="margin-top:12px;">固有数詞 中級（1〜30）</div>
+    <div class="course-grid">
+      <div class="course-card" onclick="startNumberCourse('native',1,1,30)"><div class="left"><div class="title">🟡 固有数詞 中級</div><div class="desc">하나〜서른（1〜30）</div></div><div class="time">1分</div></div>
+      <div class="course-card" onclick="startNumberCourse('native',3,1,30)"><div class="left"><div class="title">🟡 固有数詞 中級</div><div class="desc">하나〜서른（1〜30）</div></div><div class="time">3分</div></div>
+    </div>
+    <div class="section-label" style="margin-top:12px;">固有数詞 上級（1〜99）</div>
+    <div class="course-grid">
+      <div class="course-card" onclick="startNumberCourse('native',3,1,99)"><div class="left"><div class="title">🔴 固有数詞 上級</div><div class="desc">하나〜아흔아홉</div></div><div class="time">3分</div></div>
+      <div class="course-card" onclick="startNumberCourse('native',5,1,99)"><div class="left"><div class="title">🔴 固有数詞 上級</div><div class="desc">하나〜아흔아홉</div></div><div class="time">5分</div></div>
     </div>
   </div>
   <div class="tab-content" id="tab-weak">
@@ -1697,6 +1715,15 @@ const hitokoto = [
 {korean:"우리 우정은 영원해요.",japanese:"私たちの友情は永遠です。"},
 ];
 
+// ===== 数字レンジ =====
+let numMin = 1, numMax = 9999; // デフォルト
+
+function startNumberCourse(m, mins, min, max) {
+  numMin = min;
+  numMax = max;
+  startCourse(m, mins);
+}
+
 // ===== 数字変換 =====
 function numberToSinoKorean(n) {
   if (n === 0) return '영';
@@ -2049,21 +2076,23 @@ function nextQuestion() {
   const hint = document.getElementById('hint');
 
   if (mode === 'sino') {
-    const num = Math.floor(Math.random() * 9999) + 1;
+    const num = Math.floor(Math.random() * (numMax - numMin + 1)) + numMin;
     const korean = numberToSinoKorean(num);
     currentNumber = { questionText: String(num), answer: korean, detail: `${num} = ${korean}` };
     current = null;
-    label.textContent = '数字 → 漢数詞で答えてください';
+    const lvl = numMax <= 10 ? '初級' : numMax <= 100 ? '中級' : '上級';
+    label.textContent = `漢数詞 ${lvl}（${numMin}〜${numMax}）`;
     question.textContent = String(num);
-    hint.textContent = '일, 이, 삼... 십, 백, 천';
+    hint.textContent = numMax <= 10 ? '일, 이, 삼, 사, 오, 육, 칠, 팔, 구, 십' : '일, 이, 삼... 십, 백, 천';
   } else if (mode === 'native') {
-    const num = Math.floor(Math.random() * 99) + 1;
+    const num = Math.floor(Math.random() * (numMax - numMin + 1)) + numMin;
     const korean = numberToNativeKorean(num);
     currentNumber = { questionText: String(num), answer: korean, detail: `${num} = ${korean}` };
     current = null;
-    label.textContent = '数字 → 固有数詞で答えてください';
+    const lvl = numMax <= 10 ? '初級' : numMax <= 30 ? '中級' : '上級';
+    label.textContent = `固有数詞 ${lvl}（${numMin}〜${numMax}）`;
     question.textContent = String(num);
-    hint.textContent = '하나, 둘, 셋... 열, 스물, 서른...';
+    hint.textContent = numMax <= 10 ? '하나, 둘, 셋, 넷, 다섯, 여섯, 일곱, 여덟, 아홉, 열' : '하나, 둘, 셋... 열, 스물, 서른...';
   } else {
     currentNumber = null;
     current = getNextFromQueue();
