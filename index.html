@@ -2846,14 +2846,11 @@ function checkAnswer() {
   const gen = questionGen; // 現在の世代IDを保存
   if (isCorrect) {
     if (isRetryAttempt) {
-      // リトライで正解！
+      // リトライで正解！（スコアには加算しないが、練習として記録）
       clearTimeout(autoAdvanceTimer);
       isRetryAttempt = false;
       recordCorrectWord(correctAnswer);
-      // mistakesから削除（リトライで言えたので）
-      for (let i = mistakes.length - 1; i >= 0; i--) {
-        if (mistakes[i].correctAnswer === correctAnswer) { mistakes.splice(i, 1); break; }
-      }
+      // mistakesはそのまま残す（初回の成績を正確に反映するため）
       feedback.className = 'feedback correct';
       feedback.innerHTML = `<div class="result-icon">⭕</div><div class="result-label">言えました！</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakBtn('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
       speakKorean(correctAnswer, () => { if (gen !== questionGen) return; autoAdvanceTimer = setTimeout(goNext, 100); });
@@ -2883,6 +2880,11 @@ function checkAnswer() {
         answered = false;
         document.getElementById('answer-input').value = '';
         document.getElementById('voice-status').innerHTML = '<span style="color:#ffcc00;font-size:1rem;">🎤 もう一度言ってみてください</span>';
+        // 「次の問題」ボタンも表示（マイクが動かなくても進めるように）
+        const nb = document.getElementById('next-btn');
+        nb.style.display = 'block';
+        nb.textContent = isLastQuestion ? '結果を見る →' : '次の問題 →';
+        nb.onclick = () => { answered = true; isRetryAttempt = false; clearTimeout(autoAdvanceTimer); goNext(); };
         startListening();
         // 8秒タイムアウト（何も言わなければ自動進行）
         autoAdvanceTimer = setTimeout(() => {
@@ -2924,6 +2926,10 @@ function skipQuestion() {
       answered = false;
       document.getElementById('answer-input').value = '';
       document.getElementById('voice-status').innerHTML = '<span style="color:#ffcc00;font-size:1rem;">🎤 もう一度言ってみてください</span>';
+      const nb = document.getElementById('next-btn');
+      nb.style.display = 'block';
+      nb.textContent = isLastQuestion ? '結果を見る →' : '次の問題 →';
+      nb.onclick = () => { answered = true; isRetryAttempt = false; clearTimeout(autoAdvanceTimer); goNext(); };
       startListening();
       autoAdvanceTimer = setTimeout(() => {
         if (!answered) { answered = true; isRetryAttempt = false; goNext(); }
@@ -3059,13 +3065,19 @@ function startListening() {
       isListening = true;
       document.getElementById('mic-btn').classList.add('listening');
       document.getElementById('mic-btn').textContent = '🎤 聞いています...';
-      document.getElementById('voice-status').textContent = '韓国語で話してください...';
+      // リトライ中は専用メッセージを保持
+      if (!isRetryAttempt) {
+        document.getElementById('voice-status').textContent = '韓国語で話してください...';
+      }
     } catch (e) {
       // 認識がまだ停止中などのエラー → リトライ
       if (retries > 0) {
         setTimeout(() => {
           if (!isListening && useVoice && !answered) doStart(retries - 1);
         }, 300);
+      } else if (isRetryAttempt) {
+        // リトライ中にマイク起動失敗 → 手動ボタンを表示
+        document.getElementById('voice-status').innerHTML = '<span style="color:#ffcc00;font-size:1rem;">🎤 マイクボタンを押して話してください</span>';
       }
     }
   };
