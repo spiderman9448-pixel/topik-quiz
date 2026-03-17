@@ -2,7 +2,13 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="韓国語クイズ">
+<meta name="theme-color" content="#e94560">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>TOPIK 1-2級 韓国語クイズ</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -123,6 +129,16 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
 .dialog-btn-quit { background: #e94560; color: #fff; }
 .dialog-btn-retry { background: #7c3aed; color: #fff; }
 
+/* === 学習記録バー === */
+.stats-bar {
+  width: 100%; background: #fff; border-radius: 14px; padding: 16px 20px;
+  margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border: 1px solid #e8e8e8; display: flex; justify-content: space-around; text-align: center;
+}
+.stats-bar .stat-item { display: flex; flex-direction: column; gap: 2px; }
+.stats-bar .stat-num { font-size: 1.4rem; font-weight: bold; color: #e94560; }
+.stats-bar .stat-label { font-size: 0.7rem; color: #999; }
+
 /* === 結果画面 === */
 .result-summary {
   background: #fff; border-radius: 16px; padding: 28px;
@@ -148,12 +164,19 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
 <!-- ===== コース選択画面 ===== -->
 <div class="screen active" id="screen-home">
   <h1>TOPIK 1-2級 韓国語クイズ</h1>
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-item"><div class="stat-num" id="stat-total">0</div><div class="stat-label">累計問題数</div></div>
+    <div class="stat-item"><div class="stat-num" id="stat-correct">0</div><div class="stat-label">正解数</div></div>
+    <div class="stat-item"><div class="stat-num" id="stat-rate">-%</div><div class="stat-label">正答率</div></div>
+    <div class="stat-item"><div class="stat-num" id="stat-streak">0</div><div class="stat-label">連続日数</div></div>
+  </div>
   <div class="tabs">
     <div class="tab active" onclick="switchTab('tab-word')">単語</div>
     <div class="tab" onclick="switchTab('tab-sentence')">例文</div>
     <div class="tab" onclick="switchTab('tab-travel')">旅行</div>
     <div class="tab" onclick="switchTab('tab-hitokoto')">一言</div>
     <div class="tab" onclick="switchTab('tab-number')">数字</div>
+    <div class="tab" onclick="switchTab('tab-weak')">弱点克服</div>
   </div>
   <div class="tab-content active" id="tab-word">
     <div class="section-label">日本語 → 韓国語を答える</div>
@@ -200,6 +223,10 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
       <div class="course-card" onclick="startCourse('native',3)"><div class="left"><div class="title">固有数詞クイズ</div><div class="desc">하나, 둘, 열, 스물...</div></div><div class="time">3分</div></div>
       <div class="course-card" onclick="startCourse('native',5)"><div class="left"><div class="title">固有数詞クイズ</div><div class="desc">하나, 둘, 열, 스물...</div></div><div class="time">5分</div></div>
     </div>
+  </div>
+  <div class="tab-content" id="tab-weak">
+    <div class="section-label">間違えやすい問題を集中練習</div>
+    <div id="weak-content"></div>
   </div>
 </div>
 
@@ -1707,6 +1734,122 @@ let answered = false;       // 回答済みフラグ（二重判定防止）
 let micStartTimer = null;   // マイク自動起動タイマー
 let questionGen = 0;        // 問題世代ID（古いコールバック無効化用）
 
+// ===== 学習記録（localStorage） =====
+function loadStats() {
+  try { return JSON.parse(localStorage.getItem('topik-stats')) || { total: 0, correct: 0, lastDate: '', streak: 0, weakWords: {} }; }
+  catch { return { total: 0, correct: 0, lastDate: '', streak: 0, weakWords: {} }; }
+}
+function saveStats(stats) {
+  try { localStorage.setItem('topik-stats', JSON.stringify(stats)); } catch {}
+}
+function updateStatsDisplay() {
+  const s = loadStats();
+  document.getElementById('stat-total').textContent = s.total;
+  document.getElementById('stat-correct').textContent = s.correct;
+  document.getElementById('stat-rate').textContent = s.total > 0 ? Math.round(s.correct / s.total * 100) + '%' : '-%';
+  document.getElementById('stat-streak').textContent = s.streak;
+}
+function recordSession(correct, total, sessionMistakes) {
+  const s = loadStats();
+  s.total += total;
+  s.correct += correct;
+  // 連続日数の計算
+  const today = new Date().toISOString().slice(0, 10);
+  if (s.lastDate !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    s.streak = (s.lastDate === yesterday) ? s.streak + 1 : 1;
+    s.lastDate = today;
+  }
+  // 弱点ワードの記録（korean をキーに間違い回数を記録）
+  sessionMistakes.forEach(m => {
+    const key = m.correctAnswer;
+    if (!s.weakWords[key]) s.weakWords[key] = { wrong: 0, correct: 0, question: m.question };
+    s.weakWords[key].wrong++;
+  });
+  saveStats(s);
+  updateStatsDisplay();
+}
+function recordCorrectWord(koreanWord) {
+  const s = loadStats();
+  if (s.weakWords[koreanWord]) {
+    s.weakWords[koreanWord].correct++;
+    // 正解が間違いの2倍以上になったら弱点から除外
+    if (s.weakWords[koreanWord].correct >= s.weakWords[koreanWord].wrong * 2) {
+      delete s.weakWords[koreanWord];
+    }
+  }
+  saveStats(s);
+}
+// 弱点克服タブの表示更新
+function updateWeakTab() {
+  const s = loadStats();
+  const weakKeys = Object.keys(s.weakWords || {});
+  const el = document.getElementById('weak-content');
+  if (!el) return;
+  if (weakKeys.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:#999;padding:30px 0;">まだ弱点データがありません。<br>クイズで間違えた問題がここに表示されます。</div>';
+    return;
+  }
+  // 弱点ワードを間違い回数順にソート
+  const sorted = weakKeys.sort((a, b) => s.weakWords[b].wrong - s.weakWords[a].wrong);
+  let html = '<div class="course-grid">';
+  html += `<div class="course-card" onclick="startWeakCourse(3)" style="border-color:#7c3aed;"><div class="left"><div class="title" style="color:#7c3aed;">💪 弱点克服</div><div class="desc">${weakKeys.length}語の苦手な問題</div></div><div class="time">3分</div></div>`;
+  html += `<div class="course-card" onclick="startWeakCourse(5)" style="border-color:#7c3aed;"><div class="left"><div class="title" style="color:#7c3aed;">💪 弱点克服</div><div class="desc">${weakKeys.length}語の苦手な問題</div></div><div class="time">5分</div></div>`;
+  html += `<div class="course-card" onclick="startWeakCourse(10)" style="border-color:#7c3aed;"><div class="left"><div class="title" style="color:#7c3aed;">💪 弱点克服</div><div class="desc">${weakKeys.length}語の苦手な問題</div></div><div class="time">10分</div></div>`;
+  html += '</div>';
+  // 弱点ワードリスト（上位10個を表示）
+  html += '<div class="section-label" style="margin-top:16px;">苦手な単語 TOP10</div>';
+  sorted.slice(0, 10).forEach(key => {
+    const w = s.weakWords[key];
+    const escaped = key.replace(/'/g, "\\'");
+    html += `<div class="mistake-item" style="flex-direction:row;justify-content:space-between;align-items:center;">
+      <div><span class="word" style="font-size:1.2rem;">${key}</span> <button class="speak-btn" style="padding:4px 10px;font-size:0.85rem;" onclick="speakKorean('${escaped}')">▶</button><br><span class="meaning" style="font-size:0.9rem;">${w.question || ''}</span></div>
+      <div style="color:#e94560;font-weight:bold;font-size:0.85rem;">✕${w.wrong}</div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function startWeakCourse(mins) {
+  const s = loadStats();
+  const weakKeys = Object.keys(s.weakWords || {});
+  if (weakKeys.length === 0) return;
+  // 弱点ワードに対応するデータを全プールから検索
+  const allPools = [...words, ...travel, ...hitokoto];
+  const weakItems = [];
+  weakKeys.forEach(key => {
+    const found = allPools.find(item => item.korean === key);
+    if (found) weakItems.push(found);
+  });
+  if (weakItems.length === 0) return;
+  // wordモードで開始（japanese → korean の出題）
+  mode = 'word';
+  courseMins = mins;
+  correctCount = 0; totalCount = 0;
+  mistakes = [];
+  isLastQuestion = false;
+  isRetryMode = false;
+  shuffledQueue = shuffleArray(weakItems);
+  queueIndex = 0;
+  timeLeft = mins * 60;
+  showScreen('screen-quiz');
+  updateTimer();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimer();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      isLastQuestion = true;
+      document.getElementById('timer').textContent = 'ラスト！';
+      document.getElementById('timer').classList.add('warn');
+    }
+  }, 1000);
+  nextQuestion();
+}
+
+// 起動時に統計を表示
+updateStatsDisplay();
+
 function getQuestionTime() {
   // モードに応じた1問あたりの秒数
   if (mode === 'word' || mode === 'sino' || mode === 'native') return 10;
@@ -1747,6 +1890,7 @@ function switchTab(tabId) {
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
   document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+  if (tabId === 'tab-weak') updateWeakTab();
 }
 
 // ===== コース開始 =====
@@ -1812,6 +1956,9 @@ function endCourse() {
   clearInterval(timerInterval);
   stopQuestionTimer();
   stopListening();
+  speechSynthesis.cancel();
+  // 学習記録を保存
+  if (totalCount > 0) recordSession(correctCount, totalCount, mistakes);
   // 結果表示
   const pct = totalCount > 0 ? Math.round(correctCount / totalCount * 100) : 0;
   document.getElementById('result-score').textContent = `${correctCount} / ${totalCount}`;
@@ -1871,7 +2018,7 @@ function retryMistakes() {
   nextQuestion();
 }
 
-function goHome() { showScreen('screen-home'); }
+function goHome() { updateStatsDisplay(); showScreen('screen-home'); }
 
 // ===== 問題 =====
 function shuffleArray(arr) {
@@ -2031,6 +2178,7 @@ function checkAnswer() {
   const gen = questionGen; // 現在の世代IDを保存
   if (isCorrect) {
     correctCount++;
+    recordCorrectWord(correctAnswer); // 弱点ワードの正解記録
     feedback.className = 'feedback correct';
     feedback.innerHTML = `<div class="result-icon">⭕</div><div class="result-label">正解！</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
     speakKorean(correctAnswer, () => { if (gen !== questionGen) return; setTimeout(goNext, 100); });
@@ -2170,6 +2318,11 @@ document.getElementById('answer-input').addEventListener('keydown', e => {
     document.getElementById('next-btn').style.display === 'block' ? nextQuestion() : checkAnswer();
   }
 });
+
+// ===== Service Worker 登録 =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
