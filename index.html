@@ -1705,6 +1705,7 @@ let isRetryMode = false;
 let retryTotal = 0;
 let answered = false;       // 回答済みフラグ（二重判定防止）
 let micStartTimer = null;   // マイク自動起動タイマー
+let questionGen = 0;        // 問題世代ID（古いコールバック無効化用）
 
 function getQuestionTime() {
   // モードに応じた1問あたりの秒数
@@ -1944,10 +1945,15 @@ function nextQuestion() {
     isLastQuestion = true;
   }
 
+  // まず世代IDを更新（古いTTSコールバックを無効化）
+  questionGen++;
+  // 古いタイマーをすべてクリア
   clearTimeout(autoAdvanceTimer);
+  autoAdvanceTimer = null;
   clearTimeout(micStartTimer);
+  // TTSを停止（onendが発火しても世代IDが変わっているので無害）
+  speechSynthesis.cancel();
   answered = false;
-  speechSynthesis.cancel(); // 前の読み上げが残っていたら止める
   document.getElementById('answer-input').value = '';
   document.getElementById('feedback').innerHTML = '';
   document.getElementById('feedback').className = 'feedback';
@@ -1970,6 +1976,8 @@ function nextQuestion() {
 
 function replayPronunciation(text) {
   // 自動進行をキャンセルして何度でも聞き直せるようにする
+  // 世代IDを更新して古いTTSコールバックを無効化
+  questionGen++;
   clearTimeout(autoAdvanceTimer);
   autoAdvanceTimer = null;
   speakKorean(text);
@@ -2007,6 +2015,7 @@ function checkAnswer() {
   if (!input.trim()) return;
   answered = true;
   clearTimeout(micStartTimer);
+  stopListening();
   const { correctAnswer, questionText, detailHtml } = getCorrectInfo();
   const normalizedInput = normalize(input);
   const isCorrect = (mode === 'sino' || mode === 'native')
@@ -2019,16 +2028,17 @@ function checkAnswer() {
   const escaped = correctAnswer.replace(/'/g, "\\'");
 
   const goNext = isLastQuestion ? endCourse : nextQuestion;
+  const gen = questionGen; // 現在の世代IDを保存
   if (isCorrect) {
     correctCount++;
     feedback.className = 'feedback correct';
     feedback.innerHTML = `<div class="result-icon">⭕</div><div class="result-label">正解！</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
-    speakKorean(correctAnswer, () => setTimeout(goNext, 100));
+    speakKorean(correctAnswer, () => { if (gen !== questionGen) return; setTimeout(goNext, 100); });
     updateScoreBar();
   } else {
     feedback.className = 'feedback wrong';
     feedback.innerHTML = `<div class="result-icon">❌</div><div class="result-label">不正解</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="replayPronunciation('${escaped}')">🔁 もう一度聞く</button></div><div class="answer-detail">${detailHtml}</div>`;
-    speakKorean(correctAnswer, () => { autoAdvanceTimer = setTimeout(goNext, 1500); });
+    speakKorean(correctAnswer, () => { if (gen !== questionGen) return; autoAdvanceTimer = setTimeout(goNext, 1500); });
     mistakes.push({ question: questionText, correctAnswer, yourAnswer: input, srcItem: current || currentNumber });
     updateScoreBar();
   }
@@ -2038,6 +2048,7 @@ function skipQuestion() {
   if (answered) return; // 二重判定を防止
   answered = true;
   clearTimeout(micStartTimer);
+  stopListening();
   stopQuestionTimer();
   if (!current && !currentNumber) return;
   const { correctAnswer, questionText, detailHtml } = getCorrectInfo();
@@ -2047,7 +2058,8 @@ function skipQuestion() {
   feedback.innerHTML = `<div class="result-icon">⏭️</div><div class="result-label">スキップ</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="replayPronunciation('${escaped}')">🔁 もう一度聞く</button></div><div class="answer-detail">${detailHtml}</div>`;
   mistakes.push({ question: questionText, correctAnswer, yourAnswer: '', srcItem: current || currentNumber });
   const goNext = isLastQuestion ? endCourse : nextQuestion;
-  speakKorean(correctAnswer, () => { autoAdvanceTimer = setTimeout(goNext, 1500); });
+  const gen = questionGen;
+  speakKorean(correctAnswer, () => { if (gen !== questionGen) return; autoAdvanceTimer = setTimeout(goNext, 1500); });
   updateScoreBar();
 }
 
