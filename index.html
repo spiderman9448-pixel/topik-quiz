@@ -2186,7 +2186,7 @@ function checkAnswer() {
   } else {
     feedback.className = 'feedback wrong';
     feedback.innerHTML = `<div class="result-icon">❌</div><div class="result-label">不正解</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="replayPronunciation('${escaped}')">🔁 もう一度聞く</button></div><div class="answer-detail">${detailHtml}</div>`;
-    speakKorean(correctAnswer, () => { if (gen !== questionGen) return; autoAdvanceTimer = setTimeout(goNext, 1500); });
+    speakKorean(correctAnswer, () => { if (gen !== questionGen) return; autoAdvanceTimer = setTimeout(goNext, 800); });
     mistakes.push({ question: questionText, correctAnswer, yourAnswer: input, srcItem: current || currentNumber });
     updateScoreBar();
   }
@@ -2207,7 +2207,7 @@ function skipQuestion() {
   mistakes.push({ question: questionText, correctAnswer, yourAnswer: '', srcItem: current || currentNumber });
   const goNext = isLastQuestion ? endCourse : nextQuestion;
   const gen = questionGen;
-  speakKorean(correctAnswer, () => { if (gen !== questionGen) return; autoAdvanceTimer = setTimeout(goNext, 1500); });
+  speakKorean(correctAnswer, () => { if (gen !== questionGen) return; autoAdvanceTimer = setTimeout(goNext, 800); });
   updateScoreBar();
 }
 
@@ -2222,6 +2222,8 @@ function updateScoreBar() {
 // ===== 音声合成（TTS） =====
 function speakKorean(text, onEnd) {
   if (!window.speechSynthesis) { if (onEnd) onEnd(); return; }
+  // TTS再生前にマイクを止める（TTS音をマイクが拾うのを防止）
+  stopListening();
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'ko-KR'; u.rate = 1.0;
