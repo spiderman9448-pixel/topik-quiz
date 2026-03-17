@@ -2926,10 +2926,27 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     setTimeout(checkAnswer, 100);
   };
   recognition.onerror = (e) => {
-    document.getElementById('voice-status').textContent = e.error === 'no-speech' ? '音声が検出されませんでした' : `エラー: ${e.error}`;
-    stopListening();
+    if (e.error === 'no-speech') {
+      document.getElementById('voice-status').textContent = '音声が検出されませんでした';
+    } else if (e.error !== 'aborted') {
+      document.getElementById('voice-status').textContent = `エラー: ${e.error}`;
+    }
+    // no-speech/aborted の場合は onend で自動リスタートされる
   };
-  recognition.onend = () => stopListening();
+  recognition.onend = () => {
+    isListening = false;
+    const b = document.getElementById('mic-btn');
+    if (b) { b.classList.remove('listening'); b.textContent = '🎤 タップして話す'; }
+    // 音声モード中 & 未回答なら自動でマイクを再起動
+    // （不正解後の次の問題、no-speech後のリトライなど）
+    if (useVoice && !answered && !speechSynthesis.speaking) {
+      setTimeout(() => {
+        if (useVoice && !isListening && !answered && !speechSynthesis.speaking) {
+          startListening();
+        }
+      }, 300);
+    }
+  };
 }
 
 function toggleListening() {
@@ -2937,32 +2954,33 @@ function toggleListening() {
 }
 function startListening() {
   if (!recognition) { document.getElementById('voice-status').textContent = 'Chromeで開いてください'; return; }
-  try {
-    recognition.start();
-    isListening = true;
-    document.getElementById('mic-btn').classList.add('listening');
-    document.getElementById('mic-btn').textContent = '🎤 聞いています...';
-    document.getElementById('voice-status').textContent = '韓国語で話してください...';
-  } catch (e) {
-    // 認識がまだ停止中などのエラー → 少し待ってリトライ
-    setTimeout(() => {
-      if (!isListening && useVoice) {
-        try {
-          recognition.start();
-          isListening = true;
-          document.getElementById('mic-btn').classList.add('listening');
-          document.getElementById('mic-btn').textContent = '🎤 聞いています...';
-          document.getElementById('voice-status').textContent = '韓国語で話してください...';
-        } catch (e2) {}
+  if (isListening) return; // 既にリスニング中
+  const doStart = (retries) => {
+    if (isListening || answered) return; // 状態が変わっていたらスキップ
+    try {
+      recognition.start();
+      isListening = true;
+      document.getElementById('mic-btn').classList.add('listening');
+      document.getElementById('mic-btn').textContent = '🎤 聞いています...';
+      document.getElementById('voice-status').textContent = '韓国語で話してください...';
+    } catch (e) {
+      // 認識がまだ停止中などのエラー → リトライ
+      if (retries > 0) {
+        setTimeout(() => {
+          if (!isListening && useVoice && !answered) doStart(retries - 1);
+        }, 300);
       }
-    }, 300);
-  }
+    }
+  };
+  doStart(3); // 最大3回リトライ
 }
 function stopListening() {
+  if (!isListening) return; // 二重呼び出し防止
   isListening = false;
   const b = document.getElementById('mic-btn');
   if (b) { b.classList.remove('listening'); b.textContent = '🎤 タップして話す'; }
   try { recognition?.stop(); } catch(e) {}
+  // ※ recognition.stop() → onend が発火し、そこで自動リスタートが処理される
 }
 
 function toggleInputMethod() {
