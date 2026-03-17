@@ -1663,6 +1663,7 @@ let current = null, currentNumber = null;
 let correctCount = 0, totalCount = 0;
 let mistakes = []; // {question, correctAnswer, yourAnswer, detail}
 let shuffledQueue = [], queueIndex = 0;
+let autoAdvanceTimer = null;
 let useVoice = true;
 let qTimer = null, qTimeLeft = 0, qTimeMax = 0;
 let isLastQuestion = false;
@@ -1835,6 +1836,7 @@ function nextQuestion() {
     }
   }
 
+  clearTimeout(autoAdvanceTimer);
   document.getElementById('answer-input').value = '';
   document.getElementById('feedback').innerHTML = '';
   document.getElementById('feedback').className = 'feedback';
@@ -1851,6 +1853,18 @@ function nextQuestion() {
     document.getElementById('answer-input').focus();
   }
   startQuestionTimer();
+}
+
+function replayPronunciation(text) {
+  // 自動進行をキャンセルして何度でも聞き直せるようにする
+  clearTimeout(autoAdvanceTimer);
+  autoAdvanceTimer = null;
+  speakKorean(text);
+  // 「次へ」ボタンを表示
+  const nb = document.getElementById('next-btn');
+  nb.style.display = 'block';
+  nb.textContent = isLastQuestion ? '結果を見る →' : '次の問題 →';
+  nb.onclick = isLastQuestion ? endCourse : nextQuestion;
 }
 
 function normalize(s) { return s.trim().replace(/\s+/g,' ').replace(/[.。？?!！,，、]/g,''); }
@@ -1897,8 +1911,9 @@ function checkAnswer() {
     updateScoreBar();
   } else {
     feedback.className = 'feedback wrong';
-    feedback.innerHTML = `<div class="result-icon">❌</div><div class="result-label">不正解</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
-    speakKorean(correctAnswer, () => setTimeout(goNext, 1500));
+    feedback.innerHTML = `<div class="result-icon">❌</div><div class="result-label">不正解</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="replayPronunciation('${escaped}')">🔁 もう一度聞く</button></div><div class="answer-detail">${detailHtml}</div>`;
+    autoAdvanceTimer = setTimeout(goNext, 3000);
+    speakKorean(correctAnswer);
     mistakes.push({ question: questionText, correctAnswer, yourAnswer: input });
     updateScoreBar();
   }
@@ -1911,10 +1926,11 @@ function skipQuestion() {
   const feedback = document.getElementById('feedback');
   const escaped = correctAnswer.replace(/'/g, "\\'");
   feedback.className = 'feedback wrong';
-  feedback.innerHTML = `<div class="result-icon">⏭️</div><div class="result-label">スキップ</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
+  feedback.innerHTML = `<div class="result-icon">⏭️</div><div class="result-label">スキップ</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="replayPronunciation('${escaped}')">🔁 もう一度聞く</button></div><div class="answer-detail">${detailHtml}</div>`;
   mistakes.push({ question: questionText, correctAnswer, yourAnswer: '' });
   const goNext = isLastQuestion ? endCourse : nextQuestion;
-  speakKorean(correctAnswer, () => setTimeout(goNext, 1500));
+  autoAdvanceTimer = setTimeout(goNext, 3000);
+  speakKorean(correctAnswer);
   updateScoreBar();
 }
 
