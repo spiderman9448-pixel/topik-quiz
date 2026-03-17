@@ -2312,10 +2312,31 @@ const hitokoto = [
 
 // ===== 数字レンジ =====
 let numMin = 1, numMax = 9999; // デフォルト
+let numberQueue = []; // シャッフル済みの数字キュー
+let numberQueueIdx = 0;
+
+function shuffleNumberQueue() {
+  // 範囲内の全数字を配列にしてシャッフル
+  numberQueue = [];
+  for (let i = numMin; i <= numMax; i++) numberQueue.push(i);
+  for (let i = numberQueue.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [numberQueue[i], numberQueue[j]] = [numberQueue[j], numberQueue[i]];
+  }
+  numberQueueIdx = 0;
+}
+
+function getNextNumber() {
+  if (numberQueueIdx >= numberQueue.length) {
+    shuffleNumberQueue(); // 一巡したら再シャッフル
+  }
+  return numberQueue[numberQueueIdx++];
+}
 
 function startNumberCourse(m, mins, min, max) {
   numMin = min;
   numMax = max;
+  shuffleNumberQueue();
   startCourse(m, mins);
 }
 
@@ -2671,7 +2692,7 @@ function nextQuestion() {
   const hint = document.getElementById('hint');
 
   if (mode === 'sino') {
-    const num = Math.floor(Math.random() * (numMax - numMin + 1)) + numMin;
+    const num = getNextNumber();
     const korean = numberToSinoKorean(num);
     currentNumber = { questionText: String(num), answer: korean, detail: `${num} = ${korean}` };
     current = null;
@@ -2680,7 +2701,7 @@ function nextQuestion() {
     question.textContent = String(num);
     hint.textContent = '';
   } else if (mode === 'native') {
-    const num = Math.floor(Math.random() * (numMax - numMin + 1)) + numMin;
+    const num = getNextNumber();
     const korean = numberToNativeKorean(num);
     currentNumber = { questionText: String(num), answer: korean, detail: `${num} = ${korean}` };
     current = null;
