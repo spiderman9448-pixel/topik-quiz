@@ -1719,7 +1719,22 @@ function startCourse(m, mins) {
   timerInterval = setInterval(() => {
     timeLeft--;
     updateTimer();
-    if (timeLeft <= 0) { clearInterval(timerInterval); endCourse(); }
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      stopQuestionTimer();
+      // 最後の問題の答えを表示してから終了
+      if (current || currentNumber) {
+        const { correctAnswer, questionText, detailHtml } = getCorrectInfo();
+        const feedback = document.getElementById('feedback');
+        const escaped = correctAnswer.replace(/'/g, "\\'");
+        feedback.className = 'feedback wrong';
+        feedback.innerHTML = `<div class="result-icon">⏰</div><div class="result-label">時間切れ</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
+        mistakes.push({ question: questionText, correctAnswer, yourAnswer: '' });
+        speakKorean(correctAnswer, () => setTimeout(endCourse, 500));
+      } else {
+        endCourse();
+      }
+    }
   }, 1000);
   nextQuestion();
 }
