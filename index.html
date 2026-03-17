@@ -1848,7 +1848,7 @@ function nextQuestion() {
   if (useVoice) {
     document.getElementById('answer-input').value = '';
     // 自動的にマイクを立ち上げる（初回タップ後は自動で動く）
-    setTimeout(() => { if (useVoice && !isListening) startListening(); }, 400);
+    setTimeout(() => { if (useVoice && !isListening) startListening(); }, 200);
   } else {
     document.getElementById('answer-input').focus();
   }
@@ -1912,8 +1912,7 @@ function checkAnswer() {
   } else {
     feedback.className = 'feedback wrong';
     feedback.innerHTML = `<div class="result-icon">❌</div><div class="result-label">不正解</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="replayPronunciation('${escaped}')">🔁 もう一度聞く</button></div><div class="answer-detail">${detailHtml}</div>`;
-    autoAdvanceTimer = setTimeout(goNext, 3000);
-    speakKorean(correctAnswer);
+    speakKorean(correctAnswer, () => { autoAdvanceTimer = setTimeout(goNext, 1500); });
     mistakes.push({ question: questionText, correctAnswer, yourAnswer: input });
     updateScoreBar();
   }
@@ -1929,8 +1928,7 @@ function skipQuestion() {
   feedback.innerHTML = `<div class="result-icon">⏭️</div><div class="result-label">スキップ</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="replayPronunciation('${escaped}')">🔁 もう一度聞く</button></div><div class="answer-detail">${detailHtml}</div>`;
   mistakes.push({ question: questionText, correctAnswer, yourAnswer: '' });
   const goNext = isLastQuestion ? endCourse : nextQuestion;
-  autoAdvanceTimer = setTimeout(goNext, 3000);
-  speakKorean(correctAnswer);
+  speakKorean(correctAnswer, () => { autoAdvanceTimer = setTimeout(goNext, 1500); });
   updateScoreBar();
 }
 
@@ -1968,25 +1966,34 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const t = result[0].transcript;
     const vs = document.getElementById('voice-status');
     document.getElementById('answer-input').value = t;
-    if (!result.isFinal) {
-      // 中間結果をリアルタイム表示
-      vs.innerHTML = `<span style="color:#ffcc00;font-size:1rem;">🎧 認識中: ${t}</span>`;
-      return;
-    }
-    // 確定結果で正誤判定
+
+    // 正誤チェック（中間・確定 共通）
     const { correctAnswer } = getCorrectInfo();
     const ni = normalize(t);
     const isNum = (mode === 'sino' || mode === 'native');
     const ok = isNum
       ? ni.replace(/\s/g,'') === correctAnswer.replace(/\s/g,'')
       : normalize(correctAnswer) === ni;
+
+    if (!result.isFinal) {
+      // 中間結果で正解なら即判定（無音待ちをスキップ）
+      if (ok) {
+        vs.innerHTML = `<span style="color:#4ecca3;font-size:1rem;font-weight:bold;">⭕ 正解！</span> 認識: ${t}`;
+        stopListening();
+        setTimeout(checkAnswer, 100);
+        return;
+      }
+      vs.innerHTML = `<span style="color:#ffcc00;font-size:1rem;">🎧 認識中: ${t}</span>`;
+      return;
+    }
+    // 確定結果
     if (ok) {
       vs.innerHTML = `<span style="color:#4ecca3;font-size:1rem;font-weight:bold;">⭕ 正解！</span> 認識: ${t}`;
     } else {
       vs.innerHTML = `<span style="color:#e94560;font-size:1rem;font-weight:bold;">❌ 不正解</span> 認識: ${t}`;
     }
     stopListening();
-    setTimeout(checkAnswer, 300);
+    setTimeout(checkAnswer, 100);
   };
   recognition.onerror = (e) => {
     document.getElementById('voice-status').textContent = e.error === 'no-speech' ? '音声が検出されませんでした' : `エラー: ${e.error}`;
