@@ -101,6 +101,28 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
 .speak-btn { background: #4ecca3; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-left: 8px; vertical-align: middle; }
 .quit-btn { background: none; border: 1px solid #ccc; color: #888; padding: 6px 14px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
 
+/* === 確認ダイアログ === */
+.confirm-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45); z-index: 1000;
+  justify-content: center; align-items: center;
+}
+.confirm-overlay.active { display: flex; }
+.confirm-dialog {
+  background: #fff; border-radius: 20px; padding: 28px 24px; width: 85%; max-width: 340px;
+  text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.confirm-dialog .dialog-icon { font-size: 2.4rem; margin-bottom: 8px; }
+.confirm-dialog .dialog-msg { font-size: 1rem; color: #333; line-height: 1.6; margin-bottom: 20px; }
+.confirm-dialog .dialog-btns { display: flex; gap: 10px; }
+.confirm-dialog .dialog-btn {
+  flex: 1; padding: 13px 0; border: none; border-radius: 12px; font-size: 0.95rem;
+  font-weight: 600; cursor: pointer;
+}
+.dialog-btn-cancel { background: #e8e8e8; color: #666; }
+.dialog-btn-quit { background: #e94560; color: #fff; }
+.dialog-btn-retry { background: #7c3aed; color: #fff; }
+
 /* === 結果画面 === */
 .result-summary {
   background: #fff; border-radius: 16px; padding: 28px;
@@ -184,7 +206,7 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
 <!-- ===== クイズ画面 ===== -->
 <div class="screen" id="screen-quiz">
   <div class="quiz-header">
-    <button class="quit-btn" onclick="endCourse()">やめる</button>
+    <button class="quit-btn" onclick="confirmQuit()">やめる</button>
     <div class="timer" id="timer">3:00</div>
     <div class="score-bar" id="score-bar">0問</div>
   </div>
@@ -215,6 +237,15 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
   <button class="btn btn-next" id="next-btn" onclick="nextQuestion()">次の問題 →</button>
 </div>
 
+<!-- ===== 確認ダイアログ ===== -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-dialog">
+    <div class="dialog-icon" id="dialog-icon">⚠️</div>
+    <div class="dialog-msg" id="dialog-msg">本当にやめますか？<br>今の進捗は失われます。</div>
+    <div class="dialog-btns" id="dialog-btns"></div>
+  </div>
+</div>
+
 <!-- ===== 結果画面 ===== -->
 <div class="screen" id="screen-result">
   <h1>結果発表</h1>
@@ -223,6 +254,9 @@ h1 { font-size: 1.3rem; color: #e94560; margin-bottom: 16px; padding-top: 20px; 
     <div class="sub" id="result-detail">正解率 0%</div>
   </div>
   <div class="mistake-list" id="mistake-list"></div>
+  <div id="retry-area" style="display:none; width:100%; text-align:center; margin-bottom:10px;">
+    <button class="btn-home" style="background:#7c3aed;" onclick="retryMistakes()">🔄 間違えた問題だけ再挑戦</button>
+  </div>
   <button class="btn-home" onclick="goHome()">コース選択に戻る</button>
 </div>
 
@@ -1744,6 +1778,30 @@ function updateTimer() {
   el.classList.toggle('warn', timeLeft <= 10);
 }
 
+// ===== 確認ダイアログ =====
+function showDialog(icon, msg, buttons) {
+  document.getElementById('dialog-icon').textContent = icon;
+  document.getElementById('dialog-msg').innerHTML = msg;
+  const btnsEl = document.getElementById('dialog-btns');
+  btnsEl.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = `dialog-btn ${b.cls}`;
+    btn.textContent = b.label;
+    btn.onclick = () => { hideDialog(); b.action(); };
+    btnsEl.appendChild(btn);
+  });
+  document.getElementById('confirm-overlay').classList.add('active');
+}
+function hideDialog() { document.getElementById('confirm-overlay').classList.remove('active'); }
+
+function confirmQuit() {
+  showDialog('⚠️', '本当にやめますか？<br>今の進捗は失われます。', [
+    { label: '続ける', cls: 'dialog-btn-cancel', action: () => {} },
+    { label: 'やめる', cls: 'dialog-btn-quit', action: () => endCourse() }
+  ]);
+}
+
 function endCourse() {
   clearInterval(timerInterval);
   stopQuestionTimer();
@@ -1767,9 +1825,42 @@ function endCourse() {
     });
     list.innerHTML = html;
   } else {
-    list.innerHTML = '<div style="text-align:center;color:#4ecca3;padding:20px;">全問正解！すごい！</div>';
+    list.innerHTML = '<div style="text-align:center;color:#4ecca3;padding:20px;">全問正解！すごい！🎉</div>';
   }
+  // 間違えた問題がある場合だけ再挑戦ボタンを表示
+  document.getElementById('retry-area').style.display = mistakes.length > 0 ? 'block' : 'none';
   showScreen('screen-result');
+}
+
+function retryMistakes() {
+  // 間違えた問題の元データを使ってキューを作成
+  const mistakeItems = [];
+  mistakes.forEach(m => {
+    if (m.srcItem && !mistakeItems.includes(m.srcItem)) mistakeItems.push(m.srcItem);
+  });
+  if (mistakeItems.length === 0) { goHome(); return; }
+  // リセットして再スタート
+  correctCount = 0; totalCount = 0;
+  mistakes = [];
+  isLastQuestion = false;
+  shuffledQueue = shuffleArray(mistakeItems);
+  queueIndex = 0;
+  // 時間は問題数に応じて設定（1問あたり制限時間 × 問題数）
+  const perQ = (mode === 'word' || mode === 'sino' || mode === 'native') ? 10 : (mode === 'hitokoto') ? 15 : 20;
+  timeLeft = Math.max(60, mistakeItems.length * perQ);
+  courseMins = Math.ceil(timeLeft / 60);
+  showScreen('screen-quiz');
+  updateTimer();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimer();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      isLastQuestion = true;
+      document.getElementById('timer').textContent = 'ラスト！';
+    }
+  }, 1000);
+  nextQuestion();
 }
 
 function goHome() { showScreen('screen-home'); }
@@ -1913,7 +2004,7 @@ function checkAnswer() {
     feedback.className = 'feedback wrong';
     feedback.innerHTML = `<div class="result-icon">❌</div><div class="result-label">不正解</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="replayPronunciation('${escaped}')">🔁 もう一度聞く</button></div><div class="answer-detail">${detailHtml}</div>`;
     speakKorean(correctAnswer, () => { autoAdvanceTimer = setTimeout(goNext, 1500); });
-    mistakes.push({ question: questionText, correctAnswer, yourAnswer: input });
+    mistakes.push({ question: questionText, correctAnswer, yourAnswer: input, srcItem: current || currentNumber });
     updateScoreBar();
   }
 }
@@ -1926,7 +2017,7 @@ function skipQuestion() {
   const escaped = correctAnswer.replace(/'/g, "\\'");
   feedback.className = 'feedback wrong';
   feedback.innerHTML = `<div class="result-icon">⏭️</div><div class="result-label">スキップ</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="replayPronunciation('${escaped}')">🔁 もう一度聞く</button></div><div class="answer-detail">${detailHtml}</div>`;
-  mistakes.push({ question: questionText, correctAnswer, yourAnswer: '' });
+  mistakes.push({ question: questionText, correctAnswer, yourAnswer: '', srcItem: current || currentNumber });
   const goNext = isLastQuestion ? endCourse : nextQuestion;
   speakKorean(correctAnswer, () => { autoAdvanceTimer = setTimeout(goNext, 1500); });
   updateScoreBar();
