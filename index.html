@@ -1878,28 +1878,18 @@ function checkAnswer() {
   const feedback = document.getElementById('feedback');
   const escaped = correctAnswer.replace(/'/g, "\\'");
 
+  const goNext = isLastQuestion ? endCourse : nextQuestion;
   if (isCorrect) {
     correctCount++;
     feedback.className = 'feedback correct';
     feedback.innerHTML = `<div class="result-icon">⭕</div><div class="result-label">正解！</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
-    if (isLastQuestion) {
-      speakKorean(correctAnswer, () => setTimeout(endCourse, 500));
-    } else {
-      speakKorean(correctAnswer, () => setTimeout(nextQuestion, 300));
-    }
+    speakKorean(correctAnswer, () => setTimeout(goNext, 100));
     updateScoreBar();
   } else {
     feedback.className = 'feedback wrong';
     feedback.innerHTML = `<div class="result-icon">❌</div><div class="result-label">不正解</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
-    speakKorean(correctAnswer);
+    speakKorean(correctAnswer, () => setTimeout(goNext, 1500));
     mistakes.push({ question: questionText, correctAnswer, yourAnswer: input });
-    if (isLastQuestion) {
-      document.getElementById('next-btn').style.display = 'block';
-      document.getElementById('next-btn').textContent = '結果を見る →';
-      document.getElementById('next-btn').onclick = endCourse;
-    } else {
-      document.getElementById('next-btn').style.display = 'block';
-    }
     updateScoreBar();
   }
 }
@@ -1912,13 +1902,9 @@ function skipQuestion() {
   const escaped = correctAnswer.replace(/'/g, "\\'");
   feedback.className = 'feedback wrong';
   feedback.innerHTML = `<div class="result-icon">⏭️</div><div class="result-label">スキップ</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
-  speakKorean(correctAnswer);
   mistakes.push({ question: questionText, correctAnswer, yourAnswer: '' });
-  document.getElementById('next-btn').style.display = 'block';
-  if (isLastQuestion) {
-    document.getElementById('next-btn').textContent = '結果を見る →';
-    document.getElementById('next-btn').onclick = endCourse;
-  }
+  const goNext = isLastQuestion ? endCourse : nextQuestion;
+  speakKorean(correctAnswer, () => setTimeout(goNext, 1500));
   updateScoreBar();
 }
 
