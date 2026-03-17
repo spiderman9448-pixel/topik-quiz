@@ -1701,6 +1701,10 @@ let autoAdvanceTimer = null;
 let useVoice = true;
 let qTimer = null, qTimeLeft = 0, qTimeMax = 0;
 let isLastQuestion = false;
+let isRetryMode = false;
+let retryTotal = 0;
+let answered = false;       // 回答済みフラグ（二重判定防止）
+let micStartTimer = null;   // マイク自動起動タイマー
 
 function getQuestionTime() {
   // モードに応じた1問あたりの秒数
@@ -1750,6 +1754,7 @@ function startCourse(m, mins) {
   correctCount = 0; totalCount = 0;
   mistakes = [];
   isLastQuestion = false;
+  isRetryMode = false;
   // 全問シャッフルしてキューに入れる
   const pool = (m === 'travel') ? travel : (m === 'hitokoto') ? hitokoto : words;
   shuffledQueue = shuffleArray(pool);
@@ -1841,8 +1846,10 @@ function retryMistakes() {
   if (mistakeItems.length === 0) { goHome(); return; }
   // リセットして再スタート
   correctCount = 0; totalCount = 0;
+  retryTotal = mistakeItems.length;
   mistakes = [];
   isLastQuestion = false;
+  isRetryMode = true;
   shuffledQueue = shuffleArray(mistakeItems);
   queueIndex = 0;
   // 時間は問題数に応じて設定（1問あたり制限時間 × 問題数）
@@ -1877,7 +1884,11 @@ function shuffleArray(arr) {
 
 function getNextFromQueue() {
   if (queueIndex >= shuffledQueue.length) {
-    // 全問出し終わったら再シャッフル
+    if (isRetryMode) {
+      // 再挑戦モード: 全問出し終わったら終了
+      return null;
+    }
+    // 通常モード: 全問出し終わったら再シャッフル
     shuffledQueue = shuffleArray(shuffledQueue);
     queueIndex = 0;
   }
@@ -1908,6 +1919,7 @@ function nextQuestion() {
   } else {
     currentNumber = null;
     current = getNextFromQueue();
+    if (current === null) { endCourse(); return; } // 再挑戦モード: 全問終了
     if (mode === 'word') {
       label.textContent = '日本語 → 韓国語を答えてください';
       question.textContent = current.japanese;
@@ -1927,7 +1939,15 @@ function nextQuestion() {
     }
   }
 
+  // 再挑戦モード: 最後の問題かチェック
+  if (isRetryMode && queueIndex >= shuffledQueue.length) {
+    isLastQuestion = true;
+  }
+
   clearTimeout(autoAdvanceTimer);
+  clearTimeout(micStartTimer);
+  answered = false;
+  speechSynthesis.cancel(); // 前の読み上げが残っていたら止める
   document.getElementById('answer-input').value = '';
   document.getElementById('feedback').innerHTML = '';
   document.getElementById('feedback').className = 'feedback';
@@ -1938,8 +1958,10 @@ function nextQuestion() {
   document.getElementById('voice-status').textContent = '';
   if (useVoice) {
     document.getElementById('answer-input').value = '';
-    // 自動的にマイクを立ち上げる（初回タップ後は自動で動く）
-    setTimeout(() => { if (useVoice && !isListening) startListening(); }, 200);
+    // TTS完全停止後にマイクを起動（TTS音を拾わないように遅延）
+    micStartTimer = setTimeout(() => {
+      if (useVoice && !isListening && !speechSynthesis.speaking) startListening();
+    }, 500);
   } else {
     document.getElementById('answer-input').focus();
   }
@@ -1979,9 +2001,12 @@ function getCorrectInfo() {
 }
 
 function checkAnswer() {
+  if (answered) return; // 二重判定を防止
   if (!current && !currentNumber) return;
   const input = document.getElementById('answer-input').value;
   if (!input.trim()) return;
+  answered = true;
+  clearTimeout(micStartTimer);
   const { correctAnswer, questionText, detailHtml } = getCorrectInfo();
   const normalizedInput = normalize(input);
   const isCorrect = (mode === 'sino' || mode === 'native')
@@ -2010,6 +2035,9 @@ function checkAnswer() {
 }
 
 function skipQuestion() {
+  if (answered) return; // 二重判定を防止
+  answered = true;
+  clearTimeout(micStartTimer);
   stopQuestionTimer();
   if (!current && !currentNumber) return;
   const { correctAnswer, questionText, detailHtml } = getCorrectInfo();
@@ -2024,7 +2052,11 @@ function skipQuestion() {
 }
 
 function updateScoreBar() {
-  document.getElementById('score-bar').textContent = `${correctCount}/${totalCount}問`;
+  if (isRetryMode) {
+    document.getElementById('score-bar').textContent = `${correctCount}/${totalCount} (全${retryTotal}問)`;
+  } else {
+    document.getElementById('score-bar').textContent = `${correctCount}/${totalCount}問`;
+  }
 }
 
 // ===== 音声合成（TTS） =====
@@ -2053,6 +2085,7 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
   recognition = new SR();
   recognition.lang = 'ko-KR'; recognition.interimResults = true; recognition.continuous = false; recognition.maxAlternatives = 1;
   recognition.onresult = (e) => {
+    if (answered) return; // 回答済みなら無視
     const result = e.results[0];
     const t = result[0].transcript;
     const vs = document.getElementById('voice-status');
