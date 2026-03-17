@@ -2083,7 +2083,7 @@ function nextQuestion() {
     const lvl = numMax <= 10 ? '初級' : numMax <= 100 ? '中級' : '上級';
     label.textContent = `漢数詞 ${lvl}（${numMin}〜${numMax}）`;
     question.textContent = String(num);
-    hint.textContent = numMax <= 10 ? '일, 이, 삼, 사, 오, 육, 칠, 팔, 구, 십' : '일, 이, 삼... 십, 백, 천';
+    hint.textContent = '';
   } else if (mode === 'native') {
     const num = Math.floor(Math.random() * (numMax - numMin + 1)) + numMin;
     const korean = numberToNativeKorean(num);
@@ -2092,7 +2092,7 @@ function nextQuestion() {
     const lvl = numMax <= 10 ? '初級' : numMax <= 30 ? '中級' : '上級';
     label.textContent = `固有数詞 ${lvl}（${numMin}〜${numMax}）`;
     question.textContent = String(num);
-    hint.textContent = numMax <= 10 ? '하나, 둘, 셋, 넷, 다섯, 여섯, 일곱, 여덟, 아홉, 열' : '하나, 둘, 셋... 열, 스물, 서른...';
+    hint.textContent = '';
   } else {
     currentNumber = null;
     current = getNextFromQueue();
@@ -2142,7 +2142,15 @@ function nextQuestion() {
     document.getElementById('answer-input').value = '';
     // TTS完全停止後にマイクを起動（TTS音を拾わないように遅延）
     micStartTimer = setTimeout(() => {
-      if (useVoice && !isListening && !speechSynthesis.speaking) startListening();
+      if (!useVoice || isListening) return;
+      // TTSがまだ再生中なら少し待ってリトライ
+      if (speechSynthesis.speaking) {
+        micStartTimer = setTimeout(() => {
+          if (useVoice && !isListening) startListening();
+        }, 500);
+        return;
+      }
+      startListening();
     }, 500);
   } else {
     document.getElementById('answer-input').focus();
@@ -2322,11 +2330,26 @@ function toggleListening() {
 }
 function startListening() {
   if (!recognition) { document.getElementById('voice-status').textContent = 'Chromeで開いてください'; return; }
-  isListening = true;
-  document.getElementById('mic-btn').classList.add('listening');
-  document.getElementById('mic-btn').textContent = '🎤 聞いています...';
-  document.getElementById('voice-status').textContent = '韓国語で話してください...';
-  recognition.start();
+  try {
+    recognition.start();
+    isListening = true;
+    document.getElementById('mic-btn').classList.add('listening');
+    document.getElementById('mic-btn').textContent = '🎤 聞いています...';
+    document.getElementById('voice-status').textContent = '韓国語で話してください...';
+  } catch (e) {
+    // 認識がまだ停止中などのエラー → 少し待ってリトライ
+    setTimeout(() => {
+      if (!isListening && useVoice) {
+        try {
+          recognition.start();
+          isListening = true;
+          document.getElementById('mic-btn').classList.add('listening');
+          document.getElementById('mic-btn').textContent = '🎤 聞いています...';
+          document.getElementById('voice-status').textContent = '韓国語で話してください...';
+        } catch (e2) {}
+      }
+    }, 300);
+  }
 }
 function stopListening() {
   isListening = false;
