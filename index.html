@@ -1830,7 +1830,7 @@ function updateWeakTab() {
     const w = s.weakWords[key];
     const escaped = key.replace(/'/g, "\\'");
     html += `<div class="mistake-item" style="flex-direction:row;justify-content:space-between;align-items:center;">
-      <div><span class="word" style="font-size:1.2rem;">${key}</span> <button class="speak-btn" style="padding:4px 10px;font-size:0.85rem;" onclick="speakKorean('${escaped}')">▶</button><br><span class="meaning" style="font-size:0.9rem;">${w.question || ''}</span></div>
+      <div><span class="word" style="font-size:1.2rem;">${key}</span> <button class="speak-btn" style="padding:4px 10px;font-size:0.85rem;" onclick="speakBtn('${escaped}')">▶</button><br><span class="meaning" style="font-size:0.9rem;">${w.question || ''}</span></div>
       <div style="color:#e94560;font-weight:bold;font-size:0.85rem;">✕${w.wrong}</div>
     </div>`;
   });
@@ -1997,7 +1997,7 @@ function endCourse() {
       const escaped = m.correctAnswer.replace(/'/g, "\\'");
       html += `<div class="mistake-item">
         <div>
-          <div class="word">${m.correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div>
+          <div class="word">${m.correctAnswer} <button class="speak-btn" onclick="speakBtn('${escaped}')">▶ 発音</button></div>
           <div class="meaning">${m.question}</div>
           ${m.yourAnswer ? `<div class="meaning" style="color:#e94560;font-size:1.1rem;">あなたの答え: ${m.yourAnswer}</div>` : ''}
         </div>
@@ -2164,6 +2164,7 @@ function replayPronunciation(text) {
   questionGen++;
   clearTimeout(autoAdvanceTimer);
   autoAdvanceTimer = null;
+  stopListening();
   speakKorean(text);
   // 「次へ」ボタンを表示
   const nb = document.getElementById('next-btn');
@@ -2217,7 +2218,7 @@ function checkAnswer() {
     correctCount++;
     recordCorrectWord(correctAnswer); // 弱点ワードの正解記録
     feedback.className = 'feedback correct';
-    feedback.innerHTML = `<div class="result-icon">⭕</div><div class="result-label">正解！</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakKorean('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
+    feedback.innerHTML = `<div class="result-icon">⭕</div><div class="result-label">正解！</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakBtn('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
     speakKorean(correctAnswer, () => { if (gen !== questionGen) return; setTimeout(goNext, 100); });
     updateScoreBar();
   } else {
@@ -2257,10 +2258,11 @@ function updateScoreBar() {
 }
 
 // ===== 音声合成（TTS） =====
+// ボタンから呼ぶ用（マイクを止めてから発音）
+function speakBtn(text) { stopListening(); speakKorean(text); }
+
 function speakKorean(text, onEnd) {
   if (!window.speechSynthesis) { if (onEnd) onEnd(); return; }
-  // TTS再生前にマイクを止める（TTS音をマイクが拾うのを防止）
-  stopListening();
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'ko-KR'; u.rate = 1.0;
