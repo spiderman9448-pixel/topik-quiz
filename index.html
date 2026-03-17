@@ -2127,8 +2127,8 @@ function nextQuestion() {
   clearTimeout(autoAdvanceTimer);
   autoAdvanceTimer = null;
   clearTimeout(micStartTimer);
-  // TTSを停止（onendが発火しても世代IDが変わっているので無害）
-  speechSynthesis.cancel();
+  // TTSを停止しない（cancel()はonendを発火させて連鎖バグを起こすため）
+  // 代わりに世代IDで古いコールバックを無効化する
   answered = false;
   document.getElementById('answer-input').value = '';
   document.getElementById('feedback').innerHTML = '';
@@ -2160,8 +2160,6 @@ function nextQuestion() {
 
 function replayPronunciation(text) {
   // 自動進行をキャンセルして何度でも聞き直せるようにする
-  // 世代IDを更新して古いTTSコールバックを無効化
-  questionGen++;
   clearTimeout(autoAdvanceTimer);
   autoAdvanceTimer = null;
   stopListening();
@@ -2219,7 +2217,7 @@ function checkAnswer() {
     recordCorrectWord(correctAnswer); // 弱点ワードの正解記録
     feedback.className = 'feedback correct';
     feedback.innerHTML = `<div class="result-icon">⭕</div><div class="result-label">正解！</div><div class="answer-display">${correctAnswer} <button class="speak-btn" onclick="speakBtn('${escaped}')">▶ 発音</button></div><div class="answer-detail">${detailHtml}</div>`;
-    speakKorean(correctAnswer, () => { if (gen !== questionGen) return; setTimeout(goNext, 100); });
+    speakKorean(correctAnswer, () => { if (gen !== questionGen) return; autoAdvanceTimer = setTimeout(goNext, 100); });
     updateScoreBar();
   } else {
     feedback.className = 'feedback wrong';
@@ -2263,19 +2261,31 @@ function speakBtn(text) { stopListening(); speakKorean(text); }
 
 function speakKorean(text, onEnd) {
   if (!window.speechSynthesis) { if (onEnd) onEnd(); return; }
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'ko-KR'; u.rate = 1.0;
-  const v = speechSynthesis.getVoices().find(v => v.lang.startsWith('ko'));
-  if (v) u.voice = v;
-  if (onEnd) {
-    let done = false;
-    const finish = () => { if (!done) { done = true; onEnd(); } };
-    u.onend = finish;
-    u.onerror = finish;
-    setTimeout(finish, 3000); // 安全タイマー
+  // モバイルSafariではcancel()直後のspeak()が無音になるため、
+  // cancelが必要な場合のみ実行し、遅延を入れてからspeak()する
+  const needsCancel = speechSynthesis.speaking || speechSynthesis.pending;
+  if (needsCancel) {
+    speechSynthesis.cancel();
   }
-  speechSynthesis.speak(u);
+  const doSpeak = () => {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR'; u.rate = 1.0;
+    const v = speechSynthesis.getVoices().find(v => v.lang.startsWith('ko'));
+    if (v) u.voice = v;
+    if (onEnd) {
+      let done = false;
+      const finish = () => { if (!done) { done = true; onEnd(); } };
+      u.onend = finish;
+      u.onerror = finish;
+      setTimeout(finish, 4000); // 安全タイマー
+    }
+    speechSynthesis.speak(u);
+  };
+  if (needsCancel) {
+    setTimeout(doSpeak, 100); // cancel完了を待ってからspeak
+  } else {
+    doSpeak();
+  }
 }
 if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices(); }
 
